@@ -408,7 +408,7 @@ const STICKERS = ['🌸','🐰','🍓','⭐️','🦄','🍩','🐬','🌈','�
 /* =========================================================
    進捗（localStorage）
    ========================================================= */
-const APP_VER='9';
+const APP_VER='12';
 const KEY='ao-hiragana-v2';
 // 保存領域が使えない環境（プライベートモード等）でも遊べるように失敗を無視する
 const store={
@@ -440,7 +440,15 @@ function utter(text,rate){
   u.lang='ja-JP'; u.rate=rate; u.pitch=1.25; if(jaVoice)u.voice=jaVoice;
   return u;
 }
+// 読み上げのおおよその長さ。end イベントは端末によって来ないことがあるので、
+// 文字数から見積もって「前の声が終わるころ」を計算する
+let sayUntil=0;
+const estMs=(t,rate)=>250+[...String(t)].length*170/(rate||1);
+// 前の読み上げが終わってから実行する（声が重なって途中で切れないように）
+const afterSayMs=(gap=180)=>Math.max(0, sayUntil-performance.now())+gap;
+const afterSay=(fn,gap)=>setTimeout(fn, afterSayMs(gap));
 function say(text,rate=.8){
+  sayUntil=performance.now()+estMs(text,rate);
   if(!('speechSynthesis' in window)){ voiceOK=false; noVoiceNotice(); return; }
   try{
     const S=speechSynthesis;
@@ -551,14 +559,18 @@ function openRows(mode){
 /* =========================================================
    よむ
    ========================================================= */
-let rSet=[], rIdx=0;
+let rSet=[], rIdx=0, rSpecial=false;
+// 画面を離れたあとに、あとから来る処理が割り込まないようにする
+const stillOn = id => $(id).classList.contains('on');
 function openRead(row){
-  rSet=row.chars.slice(); rIdx=0;
+  rSet=row.chars.slice(); rIdx=0; rSpecial=!!row.special;
   // 行の名前を読み終わってから1枚目を読む（声が重ならないように）
-  show('read','よむ'); paintRead(1200);
+  show('read','よむ'); paintRead('after');
 }
 function paintRead(lead=0){
-  const c=rSet[rIdx], [w,em]=WORDS[c];
+  const c=rSet[rIdx];
+  // 名前の行だけは「あり・おにぎり」ではなく、自分の名前で見せる
+  const [w,em] = rSpecial ? ['あおちゃん','💗'] : WORDS[c];
   $('rCh').textContent=c;
   $('rEm').textContent=em;
   $('rWord').innerHTML = w.includes(c) ? w.replace(c,`<b>${c}</b>`) : `<b>${c}</b>…${w}`;
@@ -569,15 +581,24 @@ function paintRead(lead=0){
   $('rNext').textContent = last ? '🎉' : '▶︎';
   $('readDots').innerHTML = rSet.map((_,i)=>`<div class="dot${i===rIdx?' on':''}"></div>`).join('');
   if(!D.read[c]){ D.read[c]=true; save(); addStar(1); }
-  if(lead) setTimeout(()=>{ if($('s-read').classList.contains('on')&&rSet[rIdx]===c) say(`${c}。${w}`); },lead);
-  else say(`${c}。${w}`);
+  const line=`${c}。${w}`;
+  if(lead==='after') afterSay(()=>{ if(stillOn('s-read')&&rSet[rIdx]===c) say(line); });
+  else say(line);
 }
-$('rSay').onclick=()=>{ const c=rSet[rIdx]; say(`${c}。${WORDS[c][0]}`); };
+const rWordNow = ()=> rSpecial ? 'あおちゃん' : WORDS[rSet[rIdx]][0];
+$('rSay').onclick=()=>say(`${rSet[rIdx]}。${rWordNow()}`);
 $('rCh').onclick=()=>say(rSet[rIdx],.6);
-$('rEm').onclick=()=>say(WORDS[rSet[rIdx]][0]);
+$('rEm').onclick=()=>say(rWordNow());
 $('rPrev').onclick=()=>{ if(rIdx>0){rIdx--;sndTap();paintRead();} };
 $('rNext').onclick=()=>{ if(rIdx<rSet.length-1){rIdx++;sndTap();paintRead();} else finishSet(); };
-function finishSet(){ cheer('🎉','ぜんぶ よめた！'); addStar(2); setTimeout(()=>openRows('read'),1600); }
+// 連打しても1回だけ。お祝いの間に「もどる」を押されたら、行えらびに引き戻さない
+let finishing=false;
+function finishSet(){
+  if(finishing) return;
+  finishing=true; $('rNext').disabled=true;
+  cheer('🎉','ぜんぶ よめた！'); addStar(2); say('ぜんぶ よめたね');
+  setTimeout(()=>{ finishing=false; if(stillOn('s-read')) openRows('read'); },1600);
+}
 
 /* =========================================================
    なぞりがき
@@ -601,7 +622,7 @@ let tWord='';
 function openTrace(row){
   tSet=row.chars.slice(); tIdx=0; tWord=row.word||'';
   show('trace', tWord||'かく');
-  requestAnimationFrame(()=>{ sizeCanvas(); paintTrace(1200); });
+  requestAnimationFrame(()=>{ sizeCanvas(); paintTrace('after'); });
 }
 /* ---- 書き順（KanjiVG の線データ。1画ずつ、書く順に入っている）---- */
 const KBOX=109, KPAD=0.07;
@@ -701,10 +722,13 @@ function paintTrace(lead=0){
   $('tOrder').hidden = !strokesOf(c);
   if(lead!==false){
     const line = tWord ? `${tWord}の、${c}` : `${c}を なぞってね`;
-    const at=lead||250;
-    setTimeout(()=>{ if($('s-trace').classList.contains('on')&&tSet[tIdx]===c) say(line,.7); }, at);
-    // 読み上げのあとに、書き順をひととおり見せてから なぞらせる
-    setTimeout(()=>{ if($('s-trace').classList.contains('on')&&tSet[tIdx]===c&&!strokes) playOrder(true); }, at+1700);   // 読み上げが途中で切れないよう、少し待ってから見せる
+    const at = lead==='after' ? afterSayMs() : 250;
+    setTimeout(()=>{
+      if(!stillOn('s-trace')||tSet[tIdx]!==c) return;
+      say(line,.7);
+      // 言い終わってから、書き順をひととおり見せる
+      afterSay(()=>{ if(stillOn('s-trace')&&tSet[tIdx]===c&&!strokes) playOrder(true); },300);
+    }, at);
   }
   paintGuide();
   // 判定マスク（見本を太らせた領域）
@@ -796,7 +820,7 @@ $('tCheck').onclick=()=>{
     if(!D.wrote[c]){ D.wrote[c]=true; save(); }
     addStar(2); sndOK(); say(`${c}、じょうずだね`);
     cheer(ratio>0.8?'💯':'🌟', ratio>0.8?'かんぺき！':'よくできた！');
-    setTimeout(nextTrace,1500);
+    setTimeout(()=>{ if(stillOn('s-trace')) nextTrace(); },1500);
   }else if(ratio>=0.3){
     sndNG(); $('tHint').textContent='あと ちょっと！ぜんぶ なぞってみて 💪';
     say('あとちょっと');
@@ -809,9 +833,9 @@ $('tNext').onclick=()=>{ sndTap(); nextTrace(); };
 function nextTrace(){
   if(tIdx<tSet.length-1){ tIdx++; paintTrace(); }
   else{
-    if(tWord){ cheer('🏆','「'+tWord+'」が かけた！'); setTimeout(()=>say(tWord+'が かけたね'),300); }
+    if(tWord){ cheer('🏆','「'+tWord+'」が かけた！'); setTimeout(()=>{ if(stillOn('s-trace')) say(tWord+'が かけたね'); },300); }
     else cheer('🏆','ぜんぶ かけた！');
-    addStar(3); setTimeout(()=>openRows('trace'),1900);
+    addStar(3); setTimeout(()=>{ if(stillOn('s-trace')) openRows('trace'); },1900);
   }
 }
 
@@ -827,7 +851,7 @@ document.querySelectorAll('[data-quiz]').forEach(b=>b.onclick=()=>{ tap(b); star
 // 1問目は、押したボタンの名前を読み終わってから出題する（声が重ならないように）
 let qLead=260;
 function startQuiz(mode){
-  qMode=mode; qN=0; qLog=[]; qLead=1300;
+  qMode=mode; qN=0; qLog=[]; qLead='after';
   show('quiz','クイズ'); nextQ();
 }
 function paintBar(){
@@ -843,7 +867,7 @@ function nextQ(){
   while(wrong.length<3){ const c=pick(ALL); if(c!==qAns&&!wrong.includes(c))wrong.push(c); }
   const opts=shuffle([qAns,...wrong]);
   const top=$('qTop'), ch=$('qChoices');
-  const lead=qLead; qLead=260;
+  const lead = qLead==='after' ? afterSayMs() : qLead; qLead=260;
 
   if(qMode==='listen'){
     top.innerHTML=`<div class="qem" id="qPlay">🔊</div><div class="qtxt">どの もじ？（おして もういちど）</div>`;
@@ -878,13 +902,13 @@ function answer(btn){
     say(qMode==='reverse'?`こたえは ${WORDS[qAns][0]}`:`こたえは ${qAns}`);
   }
   qN++; paintBar();
-  setTimeout(nextQ, ok?1000:1900);
+  setTimeout(()=>{ if(stillOn('s-quiz')) nextQ(); }, ok?1000:1900);
 }
 function endQuiz(){
   const hit=qLog.filter(x=>x===1).length;
   addStar(hit>=7?5:hit>=5?3:1);
   cheer(hit>=7?'🏆':hit>=5?'😄':'💪', `${qTotal}もん中 ${hit}もん せいかい！`);
-  setTimeout(()=>show('quizmenu','クイズ'),2200);
+  setTimeout(()=>{ if(stillOn('s-quiz')) show('quizmenu','クイズ'); },2200);
 }
 
 /* =========================================================
@@ -917,7 +941,7 @@ function nextBuild(){
   $('bEm').textContent=WORD_EM[bWord]||'🧩';
   $('bTxt').textContent='「'+bWord+'」を つくろう';
   $('bEm').onclick=()=>say(bWord);
-  setTimeout(()=>say(bWord), bN===0?1400:300);   // 1問目はボタン名を読み終えてから
+  setTimeout(()=>{ if(stillOn('s-build')) say(bWord); }, bN===0?afterSayMs():300);   // 1問目はボタン名を読み終えてから
   $('bSlots').className='wslots'+(bWord.length>=4?' long':'');
   $('bSlots').innerHTML=[...bWord].map(()=>`<div class="wslot"></div>`).join('');
   // 正解の文字＋おとり1枚をまぜる
@@ -938,7 +962,7 @@ function tapTile(t){
       if(bLog[bN]===1) addStar(2);
       sndOK(); setTimeout(()=>say(bWord),350);
       cheer('🧩','「'+bWord+'」できた！');
-      bN++; setTimeout(nextBuild,1800);
+      bN++; setTimeout(()=>{ if(stillOn('s-build')) nextBuild(); },1800);
     }
   }else{
     bLog[bN]=0;
@@ -951,7 +975,7 @@ function endBuild(){
   const hit=bLog.filter(x=>x===1).length;
   addStar(hit>=5?4:2);
   cheer(hit>=5?'🏆':'💪',`${bTotal}こ中 ${hit}こ せいかい！`);
-  setTimeout(()=>show('quizmenu','クイズ'),2200);
+  setTimeout(()=>{ if(stillOn('s-build')) show('quizmenu','クイズ'); },2200);
 }
 
 /* =========================================================
@@ -1050,6 +1074,12 @@ $('sndTest').onclick=()=>{
   try{ speechSynthesis.resume(); speechSynthesis.speak(u); }catch(e){}
   setTimeout(()=>{
     if(started) return;
+    // 受け付けられて「喋っている」状態なら、音量やマナーモードの問題の可能性が高い
+    if(speechSynthesis.speaking||speechSynthesis.pending){
+      msg.innerHTML=' ⚠️ 読み上げは うけつけられましたが、鳴りはじめた合図が ありません。'
+        +'<br>マナーモードの かいじょ と 音量を ご確認ください';
+      return;
+    }
     msg.innerHTML=' ⚠️ 読み上げが 鳴りません。<br>マナーモードの かいじょ／音量／'
       +'設定→アクセシビリティ→読み上げコンテンツ の 日本語音声 を ご確認ください'
       +'<br>（にほんごの こえ：'+(jaVoice?jaVoice.name:'みつかりません')+'）';
@@ -1064,8 +1094,10 @@ if(location.protocol.startsWith('http')){
     .then(r=>r.ok?r.text():Promise.reject())
     .then(t=>{
       const m=/APP_VER='(\d+)'/.exec(t);
-      if(!m || m[1]===APP_VER || sessionStorage.getItem('ao-upd')) return;
-      sessionStorage.setItem('ao-upd','1');
+      // 同じ版で読み直しを繰り返さないための印。版ごとに持つ
+      // （'1'固定にすると、同じセッション中の2回目の更新を取りこぼす）
+      if(!m || m[1]===APP_VER || sessionStorage.getItem('ao-upd')===m[1]) return;
+      sessionStorage.setItem('ao-upd',m[1]);
       let done=false;
       const reload=()=>{ if(!done){ done=true; location.reload(); } };
       navigator.serviceWorker.getRegistration().then(reg=>{
