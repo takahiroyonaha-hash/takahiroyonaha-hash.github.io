@@ -1,7 +1,7 @@
 /* 電波がなくても遊べるようにするためのサービスワーカー。
    index.html を更新したら CACHE の版を上げる（古いキャッシュは自動で消える）。 */
-const CACHE = 'ao-hiragana-v6';
-const ASSETS = ['./', './index.html', './manifest.webmanifest', './icon.svg', './icon-maskable.svg'];
+const CACHE = 'ao-hiragana-v7';
+const ASSETS = ['./', './index.html','./strokes.js', './manifest.webmanifest', './icon.svg', './icon-maskable.svg'];
 
 self.addEventListener('install', e => {
   e.waitUntil(
