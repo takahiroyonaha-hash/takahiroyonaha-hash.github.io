@@ -79,6 +79,10 @@
   .rowbtn.done{background:linear-gradient(135deg,#fff6d6,#ffe9a8)}
   .rowbtn:active{transform:translateY(3px);box-shadow:0 1px 0 #e6dbe2}
   .rowbtn.special .chars{color:#e0407a}
+  .rowbtn.word{background:linear-gradient(135deg,#fff2d9,#ffe3b0)}
+  .rowbtn .chars{white-space:nowrap}
+  .rowbtn.word .chars{color:#d1761f;font-size:clamp(19px,6vw,24px);letter-spacing:.02em}
+  .rowbtn .em{font-size:22px;line-height:1}
   /* ---- カード（よむ） ---- */
   .stage{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:0;gap:2vh}
   .card{
@@ -140,6 +144,9 @@
   .qbar i.miss{background:#ffb3b3}
   /* ---- ことばづくり ---- */
   .wslots{display:flex;gap:10px;justify-content:center;flex:0 0 auto}
+  /* 4文字以上のことばは、画面幅からはみ出さないように小さくする */
+  .wslots.long{gap:6px}
+  .wslots.long .wslot{width:clamp(48px,16vw,72px);font-size:clamp(26px,9vw,40px);border-radius:16px}
   .wslot{
     width:clamp(64px,20vw,88px);aspect-ratio:1/1;border-radius:22px;background:#fff;
     display:grid;place-items:center;font-size:clamp(34px,11vw,48px);font-weight:800;
@@ -219,10 +226,10 @@
       <div class="sub">すきなボタンを おしてね</div>
     </div>
     <div class="menu">
-      <button class="big b1" data-go="rows-read"><span class="ic">👀</span><span>よむ<small>もじと ことばを おぼえる</small></span></button>
-      <button class="big b2" data-go="rows-trace"><span class="ic">✏️</span><span>かく<small>ゆびで なぞって かいてみる</small></span></button>
-      <button class="big b3" data-go="quiz-menu"><span class="ic">🎯</span><span>クイズ<small>きいて えらぶ あそび</small></span></button>
-      <button class="big b4" data-go="reward"><span class="ic">🎁</span><span>ごほうび<small>あつめた シールを みる</small></span></button>
+      <button class="big b1" data-go="rows-read" data-say="よむ"><span class="ic">👀</span><span>よむ<small>もじと ことばを おぼえる</small></span></button>
+      <button class="big b2" data-go="rows-trace" data-say="かく"><span class="ic">✏️</span><span>かく<small>ゆびで なぞって かいてみる</small></span></button>
+      <button class="big b3" data-go="quiz-menu" data-say="クイズ"><span class="ic">🎯</span><span>クイズ<small>きいて えらぶ あそび</small></span></button>
+      <button class="big b4" data-go="reward" data-say="ごほうび"><span class="ic">🎁</span><span>ごほうび<small>あつめた シールを みる</small></span></button>
     </div>
   </section>
 
@@ -267,10 +274,10 @@
   <!-- クイズメニュー -->
   <section class="screen" id="s-quizmenu">
     <div class="menu">
-      <button class="big b2" data-quiz="listen"><span class="ic">👂</span><span>きいて えらぶ<small>おとを きいて もじを さがす</small></span></button>
-      <button class="big b1" data-quiz="picture"><span class="ic">🖼</span><span>えを みて えらぶ<small>ことばの さいしょの もじ</small></span></button>
-      <button class="big b3" data-quiz="reverse"><span class="ic">🔤</span><span>もじを みて えらぶ<small>もじの おとを あてる</small></span></button>
-      <button class="big b4" id="goBuild"><span class="ic">🧩</span><span>ことばを つくる<small>もじを ならべて ことばに する</small></span></button>
+      <button class="big b2" data-quiz="listen" data-say="きいて えらぶ"><span class="ic">👂</span><span>きいて えらぶ<small>おとを きいて もじを さがす</small></span></button>
+      <button class="big b1" data-quiz="picture" data-say="えを みて えらぶ"><span class="ic">🖼</span><span>えを みて えらぶ<small>ことばの さいしょの もじ</small></span></button>
+      <button class="big b3" data-quiz="reverse" data-say="もじを みて えらぶ"><span class="ic">🔤</span><span>もじを みて えらぶ<small>もじの おとを あてる</small></span></button>
+      <button class="big b4" id="goBuild" data-say="ことばを つくる"><span class="ic">🧩</span><span>ことばを つくる<small>もじを ならべて ことばに する</small></span></button>
     </div>
   </section>
 
@@ -346,6 +353,16 @@ const WORDS = {
 };
 // ん・を は語頭に来ないので、絵クイズでは末尾/助詞の言い方に切り替える
 const TAIL = {'ん':'ぱ__','を':'ほん__ よむ'};
+
+// 身のまわりのことば。1文字ずつ順番になぞって、ことばを書けるようにする。
+// 「かく」では行より先に出す（意味のあることばのほうが書きたくなるため）
+const WRITE_WORDS = [
+  {w:'ぱぱ',     em:'👨'},
+  {w:'まま',     em:'👩'},
+  {w:'あそぼう', em:'🎈'},
+  {w:'だいすき', em:'💗'},
+  {w:'ほいくえん', em:'🏫'},
+];
 
 // 清音46字のあとに進む濁音・半濁音。ぢ・づ は使う場面がほぼないので入れない
 const EXTRA = [
@@ -435,8 +452,11 @@ $('back').onclick=()=>{
 };
 function goHome(){ stack=[]; show('home','ひらがな'); }
 
+// ボタンは押したら必ず名前を読み上げる（まだ字が読めなくても、どこにいるか音でわかるように）
+function tap(b){ sndTap(); if(b&&b.dataset.say) setTimeout(()=>say(b.dataset.say,.85),90); }
+
 document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>{
-  sndTap();
+  tap(b);
   const g=b.dataset.go;
   if(g==='rows-read') openRows('read');
   else if(g==='rows-trace') openRows('trace');
@@ -453,14 +473,20 @@ function openRows(mode){
   const list=$('rowList'); list.innerHTML='';
   // 清音46字が半分以上読めてから濁音を出す（最初から選択肢が多すぎないように）
   const readCount=ALL46.filter(c=>D.read[c]).length;
-  const rows = readCount>=23 ? [...ROWS,...EXTRA] : ROWS;
+  let rows = readCount>=23 ? [...ROWS,...EXTRA] : ROWS;
+  // 「かく」では、身のまわりのことばを行より先に置く
+  if(mode==='trace'){
+    rows = [...WRITE_WORDS.map(x=>({key:'w-'+x.w, chars:[...x.w], word:x.w, em:x.em})), ...rows];
+  }
   rows.forEach(r=>{
     const done=r.chars.filter(c=>mode==='read'?D.read[c]:D.wrote[c]).length;
     const b=document.createElement('button');
-    b.className='rowbtn'+(done===r.chars.length?' done':'')+(r.special?' special':'')+(r.extra?' extra':'');
-    b.innerHTML=`<div class="chars">${r.chars.join('')}</div>
+    b.className='rowbtn'+(done===r.chars.length?' done':'')+(r.special?' special':'')+(r.extra?' extra':'')+(r.word?' word':'');
+    b.innerHTML=(r.em?`<div class="em">${r.em}</div>`:'')
+      +`<div class="chars">${r.chars.join('')}</div>
       <div class="prog">${r.special?'あおちゃん💗':'⭐️'+done+' / '+r.chars.length}</div>`;
-    b.onclick=()=>{ sndTap(); mode==='read'?openRead(r):openTrace(r); };
+    b.dataset.say = r.word ? r.word : (r.special ? 'あおちゃん' : r.chars.join('、'));
+    b.onclick=()=>{ tap(b); mode==='read'?openRead(r):openTrace(r); };
     list.appendChild(b);
   });
   show('rows', mode==='read'?'どれを よむ？':'どれを かく？');
@@ -472,9 +498,10 @@ function openRows(mode){
 let rSet=[], rIdx=0;
 function openRead(row){
   rSet=row.chars.slice(); rIdx=0;
-  show('read','よむ'); paintRead();
+  // 行の名前を読み終わってから1枚目を読む（声が重ならないように）
+  show('read','よむ'); paintRead(1200);
 }
-function paintRead(){
+function paintRead(lead=0){
   const c=rSet[rIdx], [w,em]=WORDS[c];
   $('rCh').textContent=c;
   $('rEm').textContent=em;
@@ -486,7 +513,8 @@ function paintRead(){
   $('rNext').textContent = last ? '🎉' : '▶︎';
   $('readDots').innerHTML = rSet.map((_,i)=>`<div class="dot${i===rIdx?' on':''}"></div>`).join('');
   if(!D.read[c]){ D.read[c]=true; save(); addStar(1); }
-  say(`${c}。${w}`);
+  if(lead) setTimeout(()=>{ if($('s-read').classList.contains('on')&&rSet[rIdx]===c) say(`${c}。${w}`); },lead);
+  else say(`${c}。${w}`);
 }
 $('rSay').onclick=()=>{ const c=rSet[rIdx]; say(`${c}。${WORDS[c][0]}`); };
 $('rCh').onclick=()=>say(rSet[rIdx],.6);
@@ -513,14 +541,22 @@ function sizeCanvas(){
   gctx.setTransform(DPR,0,0,DPR,0,0);
   dctx.setTransform(DPR,0,0,DPR,0,0);
 }
+let tWord='';
 function openTrace(row){
-  tSet=row.chars.slice(); tIdx=0;
-  show('trace','かく');
-  requestAnimationFrame(()=>{ sizeCanvas(); paintTrace(); });
+  tSet=row.chars.slice(); tIdx=0; tWord=row.word||'';
+  show('trace', tWord||'かく');
+  requestAnimationFrame(()=>{ sizeCanvas(); paintTrace(1200); });
 }
-function paintTrace(){
+function paintTrace(lead=0){
   const c=tSet[tIdx];
-  $('tHint').textContent='「'+c+'」を ゆびで なぞろう！';
+  // ことばの場合は「いま何文字目か」を出す
+  $('tHint').textContent = tWord
+    ? '「'+tWord+'」の '+(tIdx+1)+'もじめ　「'+c+'」を なぞろう！'
+    : '「'+c+'」を ゆびで なぞろう！';
+  if(lead!==false){
+    const line = tWord ? `${tWord}の、${c}` : `${c}を なぞってね`;
+    setTimeout(()=>{ if($('s-trace').classList.contains('on')&&tSet[tIdx]===c) say(line,.7); }, lead||250);
+  }
   // 見本（うすい文字＋十字ガイド）
   gctx.clearRect(0,0,SZ,SZ);
   gctx.fillStyle='#fff'; gctx.fillRect(0,0,SZ,SZ);
@@ -599,7 +635,7 @@ window.addEventListener('resize',()=>{
   if(!$('s-trace').classList.contains('on'))return;
   const w=Math.round(draw.getBoundingClientRect().width);
   if(!w || w===lastW)return;           // 幅が変わっていなければ描いた線を残す
-  sizeCanvas(); paintTrace();
+  sizeCanvas(); paintTrace(false);      // 描き直しでは読み上げない
 });
 
 $('tClear').onclick=()=>{ sndTap(); clearDraw(); $('tHint').textContent='もういちど どうぞ！'; };
@@ -624,7 +660,11 @@ $('tCheck').onclick=()=>{
 $('tNext').onclick=()=>{ sndTap(); nextTrace(); };
 function nextTrace(){
   if(tIdx<tSet.length-1){ tIdx++; paintTrace(); }
-  else{ cheer('🏆','ぜんぶ かけた！'); addStar(3); setTimeout(()=>openRows('trace'),1700); }
+  else{
+    if(tWord){ cheer('🏆','「'+tWord+'」が かけた！'); setTimeout(()=>say(tWord+'が かけたね'),300); }
+    else cheer('🏆','ぜんぶ かけた！');
+    addStar(3); setTimeout(()=>openRows('trace'),1900);
+  }
 }
 
 /* =========================================================
@@ -635,9 +675,11 @@ const pick=a=>a[Math.floor(Math.random()*a.length)];
 function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
 function learned(){ const l=ALL.filter(c=>D.read[c]); return l.length>=4?l:ALL.slice(0,10); }
 
-document.querySelectorAll('[data-quiz]').forEach(b=>b.onclick=()=>{ sndTap(); startQuiz(b.dataset.quiz); });
+document.querySelectorAll('[data-quiz]').forEach(b=>b.onclick=()=>{ tap(b); startQuiz(b.dataset.quiz); });
+// 1問目は、押したボタンの名前を読み終わってから出題する（声が重ならないように）
+let qLead=260;
 function startQuiz(mode){
-  qMode=mode; qN=0; qLog=[];
+  qMode=mode; qN=0; qLog=[]; qLead=1300;
   show('quiz','クイズ'); nextQ();
 }
 function paintBar(){
@@ -653,22 +695,23 @@ function nextQ(){
   while(wrong.length<3){ const c=pick(ALL); if(c!==qAns&&!wrong.includes(c))wrong.push(c); }
   const opts=shuffle([qAns,...wrong]);
   const top=$('qTop'), ch=$('qChoices');
+  const lead=qLead; qLead=260;
 
   if(qMode==='listen'){
     top.innerHTML=`<div class="qem" id="qPlay">🔊</div><div class="qtxt">どの もじ？（おして もういちど）</div>`;
-    setTimeout(()=>say(qAns,.55),260);
+    setTimeout(()=>say(qAns,.55),lead);
     $('qPlay').onclick=()=>say(qAns,.55);
     ch.innerHTML=opts.map(c=>`<button class="choice" data-c="${c}">${c}</button>`).join('');
   }else if(qMode==='picture'){
     const [w,em]=WORDS[qAns];
     const shown = TAIL[qAns] ? TAIL[qAns] : '__'+w.slice(1);
     top.innerHTML=`<div class="qem">${em}</div><div class="qtxt">${shown}　→　どの もじ？</div>`;
-    setTimeout(()=>say(w),260);
+    setTimeout(()=>say(w),lead);
     top.onclick=()=>say(w);
     ch.innerHTML=opts.map(c=>`<button class="choice" data-c="${c}">${c}</button>`).join('');
   }else{ // reverse：文字を見て、正しい絵をえらぶ
     top.innerHTML=`<div class="qch">${qAns}</div><div class="qtxt">この もじの ことばは どれ？</div>`;
-    setTimeout(()=>say(qAns,.55),260);
+    setTimeout(()=>say(qAns,.55),lead);
     top.onclick=()=>say(qAns,.55);
     ch.innerHTML=opts.map(c=>`<button class="choice" data-c="${c}" style="font-size:clamp(38px,13vw,58px)">${WORDS[c][1]}</button>`).join('');
   }
@@ -700,11 +743,18 @@ function endQuiz(){
    ことばづくり：絵と音をたよりに、もじを順番どおりに並べる
    ========================================================= */
 // ならべ替えに使えることば（2〜3文字、伸ばす音「ー」を含まないもの）
-const BUILDABLE = [...new Set(Object.values(WORDS).map(v=>v[0]))]
-  .filter(w=>/^[ぁ-ん]{2,3}$/.test(w));
+const BUILDABLE = [...new Set([
+    ...Object.values(WORDS).map(v=>v[0]).filter(w=>/^[ぁ-ん]{2,3}$/.test(w)),
+    ...WRITE_WORDS.map(x=>x.w),
+  ])];
+// ことば→絵文字（WORDS と みのまわりのことば の両方から引く）
+const WORD_EM = Object.fromEntries([
+  ...Object.values(WORDS).map(v=>[v[0],v[1]]),
+  ...WRITE_WORDS.map(x=>[x.w,x.em]),
+]);
 let bWord='', bPos=0, bN=0, bTotal=6, bLog=[];
 
-$('goBuild').onclick=()=>{ sndTap(); bN=0; bLog=[]; show('build','ことばづくり'); nextBuild(); };
+$('goBuild').onclick=()=>{ tap($('goBuild')); bN=0; bLog=[]; show('build','ことばづくり'); nextBuild(); };
 
 function nextBuild(){
   if(bN>=bTotal) return endBuild();
@@ -716,11 +766,11 @@ function nextBuild(){
   bWord=pick(known.length>=3 ? known
     : BUILDABLE.filter(w=>[...w].every(c=>ALL46.includes(c))));
   bPos=0;
-  const em=Object.values(WORDS).find(v=>v[0]===bWord)[1];
-  $('bEm').textContent=em;
+  $('bEm').textContent=WORD_EM[bWord]||'🧩';
   $('bTxt').textContent='「'+bWord+'」を つくろう';
   $('bEm').onclick=()=>say(bWord);
-  setTimeout(()=>say(bWord),300);
+  setTimeout(()=>say(bWord), bN===0?1400:300);   // 1問目はボタン名を読み終えてから
+  $('bSlots').className='wslots'+(bWord.length>=4?' long':'');
   $('bSlots').innerHTML=[...bWord].map(()=>`<div class="wslot"></div>`).join('');
   // 正解の文字＋おとり1枚をまぜる
   const decoy=pick(ALL.filter(c=>!bWord.includes(c)));
