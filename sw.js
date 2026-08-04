@@ -1,6 +1,6 @@
 /* 電波がなくても遊べるようにするためのサービスワーカー。
    index.html を更新したら CACHE の版を上げる（古いキャッシュは自動で消える）。 */
-const CACHE = 'ao-hiragana-v7';
+const CACHE = 'ao-hiragana-v9';
 const ASSETS = ['./', './index.html','./strokes.js', './manifest.webmanifest', './icon.svg', './icon-maskable.svg'];
 
 self.addEventListener('install', e => {
@@ -22,6 +22,8 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   const req = e.request;
   if (req.method !== 'GET') return;
+  // 版の確認だけは必ずネットワークを見る（キャッシュを返すと更新に気づけない）
+  if (new URL(req.url).searchParams.has('fresh')) return;
   // まずキャッシュを返して即表示し、裏側で新しい版を取り込む
   e.respondWith(
     caches.match(req, { ignoreSearch: true }).then(hit => {

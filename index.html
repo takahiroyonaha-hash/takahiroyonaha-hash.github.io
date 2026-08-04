@@ -53,6 +53,11 @@
   .hero{text-align:center;flex:0 0 auto;margin:2vh 0 2.5vh}
   .hero .name{font-size:clamp(30px,10vw,44px);font-weight:800;color:var(--pink-d);line-height:1.15}
   .hero .sub{font-size:15px;opacity:.65;margin-top:6px}
+  .novoice{
+    font-size:12px;line-height:1.5;margin:10px auto 0;max-width:320px;padding:8px 10px;
+    background:#fff6d6;border-radius:14px;color:#7a5a10;
+  }
+  .novoice[hidden]{display:none}
   .menu{flex:1;display:flex;flex-direction:column;gap:12px;justify-content:center;min-height:0}
   .big{
     border:none;border-radius:26px;color:#fff;font-weight:800;
@@ -194,8 +199,9 @@
   .rowbtn.extra{background:linear-gradient(135deg,#f6f0ff,#ece1ff)}
   .rowbtn.extra .chars{color:#7a52c8}
   .legend{text-align:center;font-size:13px;opacity:.6;margin-top:10px}
-  .credit{text-align:center;font-size:11px;opacity:.45;margin-top:14px}
+  .credit{text-align:center;font-size:11px;color:#a2949c;margin-top:18px;padding-bottom:6px}
   .credit a{color:inherit}
+  #sndMsg{display:inline-block;font-size:12px;color:var(--ink);margin-top:6px}
   /* ---- お祝いオーバーレイ ---- */
   #cheer{
     position:fixed;inset:0;display:none;place-items:center;z-index:50;
@@ -233,6 +239,7 @@
     <div class="hero">
       <div class="name">あおちゃんの<br>ひらがな</div>
       <div class="sub">すきなボタンを おしてね</div>
+      <div class="novoice" id="novoice" hidden>🔇 おとが でないときは、iPhoneの<b>マナーモード</b>を かいじょ して、<b>おとりょう</b>を あげてください</div>
     </div>
     <div class="menu">
       <button class="big b1" data-go="rows-read" data-say="よむ"><span class="ic">👀</span><span>よむ<small>もじと ことばを おぼえる</small></span></button>
@@ -322,7 +329,14 @@
       <div class="sheet" id="sheet"></div>
       <div class="gojuon" id="gojuon"></div>
       <div class="legend">ピンクの もじ＝よんだ　⭐️＝かけた</div>
-      <div class="credit">かきじゅんのデータ：<a href="http://kanjivg.tagaini.net" target="_blank" rel="noopener">KanjiVG</a>（CC BY-SA 3.0）</div>
+      <div class="credit">
+        <button class="mini" id="sndTest">🔊 おとの テスト</button>
+        <span id="sndMsg"></span>
+        <div style="margin-top:10px">
+          かきじゅんのデータ：<a href="http://kanjivg.tagaini.net" target="_blank" rel="noopener">KanjiVG</a>（CC BY-SA 3.0）
+          ・ <span id="verLabel"></span>
+        </div>
+      </div>
     </div>
   </section>
 </div>
@@ -394,6 +408,7 @@ const STICKERS = ['🌸','🐰','🍓','⭐️','🦄','🍩','🐬','🌈','�
 /* =========================================================
    進捗（localStorage）
    ========================================================= */
+const APP_VER='9';
 const KEY='ao-hiragana-v2';
 // 保存領域が使えない環境（プライベートモード等）でも遊べるように失敗を無視する
 const store={
@@ -417,14 +432,36 @@ function pickVoice(){
 }
 if('speechSynthesis' in window){ pickVoice(); speechSynthesis.onvoiceschanged=pickVoice; }
 const stopSpeech = ()=>{ if('speechSynthesis' in window) try{ speechSynthesis.cancel(); }catch(e){} };
+
+// 読み上げが実際に鳴ったか（null=まだ分からない / false=鳴らなかった）
+let voiceOK=null;
+function utter(text,rate){
+  const u=new SpeechSynthesisUtterance(text);
+  u.lang='ja-JP'; u.rate=rate; u.pitch=1.25; if(jaVoice)u.voice=jaVoice;
+  return u;
+}
 function say(text,rate=.8){
-  if(!('speechSynthesis' in window)) return;
+  if(!('speechSynthesis' in window)){ voiceOK=false; noVoiceNotice(); return; }
   try{
-    speechSynthesis.cancel();
-    const u=new SpeechSynthesisUtterance(text);
-    u.lang='ja-JP'; u.rate=rate; u.pitch=1.25; if(jaVoice)u.voice=jaVoice;
-    speechSynthesis.speak(u);
-  }catch(e){}
+    const S=speechSynthesis;
+    // 何も喋っていないときに cancel すると、iOSでは次の speak が無視されることがある
+    if(S.speaking||S.pending) S.cancel();
+    if(S.paused) S.resume();
+    const u=utter(text,rate);
+    let started=false;
+    u.onstart=()=>{ started=true; voiceOK=true; };
+    S.speak(u);
+    // iOSではまれに無音のまま終わる。鳴っていなければ1回だけ言い直す
+    setTimeout(()=>{
+      if(started||S.speaking||S.pending) return;
+      try{ S.resume(); S.speak(utter(text,rate)); }catch(e){}
+      setTimeout(()=>{ if(voiceOK===null){ voiceOK=false; noVoiceNotice(); } },900);
+    },350);
+  }catch(e){ voiceOK=false; noVoiceNotice(); }
+}
+// 声が出ないまま黙っていると原因が分からないので、ホームに小さく出す
+function noVoiceNotice(){
+  const el=$('novoice'); if(el) el.hidden=false;
 }
 let AC=null;
 function beep(freqs,dur=.12){
@@ -667,7 +704,7 @@ function paintTrace(lead=0){
     const at=lead||250;
     setTimeout(()=>{ if($('s-trace').classList.contains('on')&&tSet[tIdx]===c) say(line,.7); }, at);
     // 読み上げのあとに、書き順をひととおり見せてから なぞらせる
-    setTimeout(()=>{ if($('s-trace').classList.contains('on')&&tSet[tIdx]===c&&!strokes) playOrder(true); }, at+1100);
+    setTimeout(()=>{ if($('s-trace').classList.contains('on')&&tSet[tIdx]===c&&!strokes) playOrder(true); }, at+1700);   // 読み上げが途中で切れないよう、少し待ってから見せる
   }
   paintGuide();
   // 判定マスク（見本を太らせた領域）
@@ -996,6 +1033,55 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
   });
 }
 paintStars();
+
+/* =========================================================
+   保護者向け：おとの確認と、版の入れ替え
+   ========================================================= */
+$('verLabel').textContent='v'+APP_VER;
+$('sndTest').onclick=()=>{
+  const msg=$('sndMsg');
+  msg.textContent=' ためしています…';
+  voiceOK=null;
+  if(!('speechSynthesis' in window)){ msg.textContent=' ⚠️ この ブラウザは 読み上げに 対応していません'; return; }
+  const u=utter('おとの テスト。きこえますか',.85);
+  let started=false;
+  u.onstart=()=>{ started=true; voiceOK=true; msg.textContent=' ✅ 読み上げは でています'; };
+  u.onerror=e=>{ if(!started) msg.textContent=' ⚠️ 読み上げが とまりました（'+(e.error||'')+'）'; };
+  try{ speechSynthesis.resume(); speechSynthesis.speak(u); }catch(e){}
+  setTimeout(()=>{
+    if(started) return;
+    msg.innerHTML=' ⚠️ 読み上げが 鳴りません。<br>マナーモードの かいじょ／音量／'
+      +'設定→アクセシビリティ→読み上げコンテンツ の 日本語音声 を ご確認ください'
+      +'<br>（にほんごの こえ：'+(jaVoice?jaVoice.name:'みつかりません')+'）';
+  },1500);
+};
+
+// 新しい版が出ていたら、その場で入れ替える（ホーム画面アプリが古いままにならないように）。
+// キャッシュを先に消すと、その直後に電波が切れたとき遊べなくなる。
+// まずサービスワーカーに新しい版を取り込ませ、それが終わってから読み直す。
+if(location.protocol.startsWith('http')){
+  fetch('index.html?fresh=1&t='+Date.now(),{cache:'no-store'})
+    .then(r=>r.ok?r.text():Promise.reject())
+    .then(t=>{
+      const m=/APP_VER='(\d+)'/.exec(t);
+      if(!m || m[1]===APP_VER || sessionStorage.getItem('ao-upd')) return;
+      sessionStorage.setItem('ao-upd','1');
+      let done=false;
+      const reload=()=>{ if(!done){ done=true; location.reload(); } };
+      navigator.serviceWorker.getRegistration().then(reg=>{
+        if(!reg) return reload();
+        reg.addEventListener('updatefound',()=>{
+          const sw=reg.installing;
+          sw&&sw.addEventListener('statechange',()=>{ if(sw.state==='activated') reload(); });
+        });
+        reg.update().catch(()=>{});
+        // 取り込みが始まらないときの保険（この時点で通信はできている）
+        setTimeout(()=>{ if(!done) caches.keys()
+          .then(ks=>Promise.all(ks.map(k=>caches.delete(k)))).catch(()=>{}).then(reload); },6000);
+      }).catch(reload);
+    })
+    .catch(()=>{});
+}
 </script>
 </body>
 </html>
