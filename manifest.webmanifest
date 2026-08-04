@@ -1,0 +1,26 @@
+{
+  "name": "あおちゃんの ひらがな",
+  "short_name": "ひらがな",
+  "description": "よむ・かく・クイズで ひらがな46もじを おぼえる アプリ",
+  "lang": "ja",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#fff2f7",
+  "theme_color": "#ffd9e8",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-maskable.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ]
+}
