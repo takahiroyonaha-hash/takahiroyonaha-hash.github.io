@@ -16,6 +16,8 @@
   :root{
     --pink:#ff7fae; --pink-d:#e0407a; --yellow:#ffd166; --mint:#7fd8c4;
     --sky:#8fc9ff; --purple:#c9a7ff; --ink:#4a3b45; --paper:#fffaf3;
+    /* 薄いグレーの二次テキストは明るい地の上で 2〜3:1 しか出ない。読める濃さを決めておく */
+    --ink-2:#6f626a;
     --pad-b:env(safe-area-inset-bottom,0px);
   }
   /* 4歳が見る画面なので、端末のダークモードでも明るい配色のまま固定する */
@@ -52,52 +54,73 @@
   /* ---- ホーム ---- */
   .hero{text-align:center;flex:0 0 auto;margin:2vh 0 2.5vh}
   .hero .name{font-size:clamp(30px,10vw,44px);font-weight:800;color:var(--pink-d);line-height:1.15}
-  .hero .sub{font-size:15px;opacity:.65;margin-top:6px}
+  .hero .sub{font-size:15px;color:var(--ink-2);margin-top:6px}
   .novoice{
     font-size:12px;line-height:1.5;margin:10px auto 0;max-width:320px;padding:8px 10px;
     background:#fff6d6;border-radius:14px;color:#7a5a10;
   }
   .novoice[hidden]{display:none}
-  .menu{flex:1;display:flex;flex-direction:column;gap:12px;justify-content:center;min-height:0}
+  .menu{flex:1;display:flex;flex-direction:column;gap:14px;justify-content:center;min-height:0}
   .big{
-    border:none;border-radius:26px;color:#fff;font-weight:800;
+    border:none;border-radius:26px;font-weight:800;
     display:flex;align-items:center;gap:14px;padding:0 18px;
-    font-size:clamp(21px,6.4vw,27px);height:clamp(76px,13vh,104px);
-    box-shadow:0 6px 0 rgba(0,0,0,.14);text-align:left;
+    font-size:clamp(21px,6.4vw,27px);height:clamp(76px,15vh,116px);
+    box-shadow:0 6px 0 var(--sh);text-align:left;
   }
   .big .ic{font-size:1.5em;line-height:1}
-  .big small{display:block;font-size:13px;font-weight:600;opacity:.9;margin-top:2px}
-  .big:active{transform:translateY(4px);box-shadow:0 2px 0 rgba(0,0,0,.14)}
-  .b1{background:linear-gradient(135deg,#ff9ec0,#ff6fa5)}
-  .b2{background:linear-gradient(135deg,#8fd4ff,#5aabf5)}
-  .b3{background:linear-gradient(135deg,#ffdd7d,#f7b733);color:#6b4a10;text-shadow:none}
-  .b4{background:linear-gradient(135deg,#a8e6cf,#5cc9a7)}
+  .big small{display:block;font-size:13.5px;font-weight:700;opacity:.88;margin-top:3px}
+  .big:active{transform:translateY(4px);box-shadow:0 2px 0 var(--sh)}
+  /* パステルの上の白ヌキ文字は 1.4〜2.6:1 しか出ず、4歳には読みにくい。
+     もともと読めていたのは濃い茶文字の黄色ボタンだけだったので、4色ともその方式に揃える。
+     地を明るくして文字を同系色の濃いインクにすると、キャンディ感はむしろ強くなる */
+  .b1{background:linear-gradient(135deg,#ffc9de,#ffb0cd);color:#8e1c48;--sh:#f39ab8}
+  .b2{background:linear-gradient(135deg,#cfe8ff,#a9d3ff);color:#0f4c84;--sh:#8fbde8}
+  .b3{background:linear-gradient(135deg,#ffe7a6,#ffce62);color:#6b4a10;--sh:#eab544}
+  .b4{background:linear-gradient(135deg,#c6f0e0,#94ddc3);color:#0b5c46;--sh:#79c4a8}
   /* ---- 行えらび ---- */
   .rows{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;display:grid;
     grid-template-columns:repeat(2,1fr);gap:10px;padding:4px 2px 12px;align-content:start}
   .rowbtn{
-    border:none;border-radius:22px;background:#fff;box-shadow:0 4px 0 #e6dbe2;
-    padding:12px 8px;display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--ink);
+    border:none;border-radius:22px;background:#fff;box-shadow:0 4px 0 var(--sh,#e6dbe2);
+    padding:12px 8px;min-height:86px;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;gap:5px;color:var(--ink);
   }
-  .rowbtn .chars{font-size:26px;font-weight:800;letter-spacing:.06em;color:var(--pink-d)}
-  .rowbtn .prog{font-size:13px;opacity:.7}
-  .rowbtn.done{background:linear-gradient(135deg,#fff6d6,#ffe9a8)}
-  .rowbtn:active{transform:translateY(3px);box-shadow:0 1px 0 #e6dbe2}
-  .rowbtn.special .chars{color:#e0407a}
-  .rowbtn.word{background:linear-gradient(135deg,#fff2d9,#ffe3b0)}
-  .rowbtn .chars{white-space:nowrap}
-  .rowbtn.word .chars{color:#d1761f;font-size:clamp(19px,6vw,24px);letter-spacing:.02em}
-  .rowbtn .em{font-size:22px;line-height:1}
+  /* 5文字の行名は 320px 幅だとタイルからはみ出す */
+  .rowbtn .chars{font-size:clamp(21px,6.8vw,26px);font-weight:800;letter-spacing:.06em;color:var(--pink-d);white-space:nowrap}
+  /* 「0 / 5」の算用数字は4歳には読めない。●で残りを見せる */
+  .rowbtn .prog{display:flex;gap:5px;align-items:center;justify-content:center;min-height:11px}
+  .rowbtn .prog i{width:10px;height:10px;border-radius:50%;background:#eddfe7}
+  .rowbtn .prog i.on{background:var(--pink-d)}
+  .rowbtn.done .prog i{background:#f0deb0}
+  .rowbtn.special .prog i{background:#f5c6da}
+  .rowbtn.word .prog i{background:#f0d3ae}
+  .rowbtn .prog .lbl{font-size:12.5px;font-weight:700;color:#8e1c48}
+  .rowbtn:active{transform:translateY(3px);box-shadow:0 1px 0 var(--sh,#e6dbe2)}
+  /* 自分の名前の行は、この画面で一番目立っていてほしい */
+  .rowbtn.special{background:linear-gradient(135deg,#ffe7f0,#ffd2e3);--sh:#f0b9d0}
+  .rowbtn.special .chars{color:#8e1c48}
+  .rowbtn.word{background:linear-gradient(135deg,#fff2d9,#ffdcab);--sh:#eac98f}
+  .rowbtn.word .chars{color:#8c4707;font-size:clamp(19px,6vw,24px);letter-spacing:.02em}
+  .rowbtn.word .prog i.on{background:#8c4707}
+  .rowbtn .em{font-size:27px;line-height:1}
+  /* 「かく」の行は青、「よむ」の行はピンク。字が読めなくても色でどちらか分かる */
+  .rows.trace .rowbtn:not(.word):not(.special) .chars{color:#1a5f9e}
+  .rows.trace .rowbtn:not(.word):not(.special) .prog i.on{background:#1a5f9e}
+  .rowbtn.done{background:linear-gradient(135deg,#fff6d6,#ffe9a8);--sh:#e6c56f}
   /* ---- カード（よむ） ---- */
-  .stage{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:0;gap:2vh}
+  .stage{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:0;gap:14px}
   .card{
     width:100%;background:#fff;border-radius:32px;box-shadow:0 8px 0 #ecdfe6;
-    padding:16px;display:flex;flex-direction:column;align-items:center;gap:6px;
+    padding:18px 16px 22px;display:flex;flex-direction:column;align-items:center;gap:10px;
   }
-  .card .ch{font-size:clamp(96px,34vw,170px);font-weight:800;line-height:1.05;color:var(--pink-d)}
-  .card .emoji{font-size:clamp(46px,15vw,72px);line-height:1}
-  .card .word{font-size:clamp(22px,7vw,30px);font-weight:700;letter-spacing:.04em}
+  /* 画面の高さも使って、余白ではなく見せたいものに寸法をまわす */
+  .card .ch{font-size:min(46vw,27vh);font-weight:800;line-height:1.02;color:var(--pink-d)}
+  .card .emoji{font-size:min(24vw,15vh);line-height:1}
+  .card .word{font-size:min(9.5vw,5.4vh);font-weight:700;letter-spacing:.04em}
   .card .word b{color:var(--pink-d)}
+  /* 文字と絵はタップで読み上げる。押した手ごたえだけは返す */
+  .card .ch,.card .emoji{transition:transform .12s}
+  .card .ch:active,.card .emoji:active{transform:scale(.93)}
   .navrow{display:flex;gap:10px;width:100%;align-items:stretch;flex:0 0 auto}
   .nav{
     flex:0 0 22%;border:none;border-radius:22px;background:#fff;box-shadow:0 4px 0 #e6dbe2;
@@ -106,66 +129,93 @@
   .nav[disabled]{opacity:.35}
   .speak{
     flex:1;border:none;border-radius:22px;height:70px;font-size:22px;font-weight:800;color:#fff;
-    background:linear-gradient(135deg,#8fd4ff,#5aabf5);box-shadow:0 4px 0 #4a90d9;
+    background:linear-gradient(135deg,#3488d8,#2b7ac9);box-shadow:0 4px 0 #1c5c9e;
   }
   .speak:active,.nav:active{transform:translateY(3px)}
-  .dots{display:flex;gap:6px;justify-content:center;flex:0 0 auto}
-  .dot{width:9px;height:9px;border-radius:50%;background:#e2d6dd}
+  .dots{display:flex;gap:8px;justify-content:center;flex:0 0 auto}
+  .dot{width:11px;height:11px;border-radius:50%;background:#e2d6dd}
   .dot.on{background:var(--pink);transform:scale(1.35)}
   /* ---- なぞりがき ---- */
   .traceWrap{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;min-height:0}
-  .cvBox{position:relative;width:min(88vw,340px);aspect-ratio:1/1;flex:0 0 auto}
+  /* vw だと #app の左右パディング分だけはみ出す。親の幅を基準にする */
+  .cvBox{position:relative;width:min(100%,400px);aspect-ratio:1/1;flex:0 0 auto}
   #guide,#draw{position:absolute;inset:0;width:100%;height:100%;border-radius:28px}
   #guide{background:#fff;box-shadow:0 8px 0 #ecdfe6}
   #draw{touch-action:none}
   .hintrow{display:flex;align-items:center;gap:8px;width:100%;flex:0 0 auto}
-  .tracehint{font-size:16px;opacity:.7;text-align:center;min-height:22px;flex:1}
+  .tracehint{font-size:16px;color:#6b5c64;font-weight:600;text-align:center;min-height:22px;flex:1}
   .mini{
     flex:0 0 auto;border:none;border-radius:16px;padding:9px 12px;font-size:14px;font-weight:800;
-    background:#fff;color:var(--pink-d);box-shadow:0 3px 0 #e6dbe2;white-space:nowrap;
+    background:#fff;color:#c02f66;box-shadow:0 3px 0 #e6dbe2;white-space:nowrap;
   }
   .mini:active{transform:translateY(2px)}
   .mini[hidden]{display:none}
+  /* 書き順はこのアプリで一番教えたいこと。小さな隅のボタンのままにしない */
+  #tOrder{
+    background:linear-gradient(135deg,#ffe7a6,#ffce62);color:#6b4a10;
+    box-shadow:0 3px 0 #eab544;font-size:15px;padding:11px 14px;
+  }
   .toolrow{display:flex;gap:10px;width:100%;flex:0 0 auto}
   .tool{
-    flex:1;border:none;border-radius:22px;height:66px;font-size:18px;font-weight:800;
-    background:#fff;color:var(--ink);box-shadow:0 4px 0 #e6dbe2;
+    flex:1;border:none;border-radius:22px;height:66px;font-size:20px;font-weight:800;
+    white-space:nowrap;background:#fff;color:var(--ink);box-shadow:0 4px 0 #e6dbe2;
   }
-  .tool.go{background:linear-gradient(135deg,#a8e6cf,#4cc49f);color:#fff;box-shadow:0 4px 0 #39a081;flex:1.4}
+  .tool.go{background:linear-gradient(135deg,#2e9d7f,#1b8068);color:#fff;box-shadow:0 4px 0 #16705b;flex:1.7}
   .tool:active{transform:translateY(3px)}
   /* ---- クイズ ---- */
   .quiz{flex:1;display:flex;flex-direction:column;gap:12px;min-height:0}
   .qtop{
-    background:#fff;border-radius:28px;box-shadow:0 6px 0 #ecdfe6;padding:14px;
+    position:relative;background:#fff;border-radius:28px;box-shadow:0 6px 0 #ecdfe6;padding:14px;
     display:flex;flex-direction:column;align-items:center;gap:6px;flex:0 0 auto;
   }
-  .qtop .qem{font-size:clamp(48px,17vw,84px);line-height:1}
-  .qtop .qtxt{font-size:19px;font-weight:700;opacity:.8}
-  .qtop .qch{font-size:clamp(70px,26vw,120px);font-weight:800;color:var(--pink-d);line-height:1.05}
+  .qtop .qem{font-size:min(20vw,13vh);line-height:1}
+  .qtop .qtxt{font-size:19px;font-weight:700;color:#5c4d55}
+  .qtop .qch{font-size:min(28vw,18vh);font-weight:800;color:var(--pink-d);line-height:1.05}
+  /* 「もういちど聞ける」ことが分かる手がかり。押せる形にしておく */
+  .replay{
+    position:absolute;right:10px;top:10px;border:none;border-radius:50%;padding:0;
+    width:42px;height:42px;font-size:19px;background:#eaf4ff;box-shadow:0 3px 0 #cfe3f7;
+    display:grid;place-items:center;
+  }
+  .replay:active{transform:translateY(2px);box-shadow:0 1px 0 #cfe3f7}
+  /* きいてえらぶ：スピーカーそのものを大きな丸ボタンにする */
+  #qPlay{
+    width:min(30vw,116px);aspect-ratio:1/1;border-radius:50%;background:#eaf4ff;
+    box-shadow:0 4px 0 #cfe3f7;display:grid;place-items:center;font-size:min(15vw,58px);
+  }
+  #qPlay:active{transform:translateY(3px);box-shadow:0 1px 0 #cfe3f7}
   .choices{flex:1;display:grid;grid-template-columns:1fr 1fr;gap:12px;min-height:0}
   .choice{
     border:none;border-radius:26px;background:#fff;box-shadow:0 6px 0 #e6dbe2;
-    font-size:clamp(38px,13vw,60px);font-weight:800;color:var(--pink-d);
+    font-size:min(26vw,15vh);font-weight:800;color:var(--pink-d);
   }
+  /* 絵の選択肢は「絵が答え」なので、カードいっぱいに大きくする */
+  .choice.em{font-size:min(28vw,16vh)}
   .choice:active{transform:translateY(3px)}
-  .choice.ok{background:linear-gradient(135deg,#a8e6cf,#5cc9a7);color:#fff}
-  .choice.ng{background:#ffd9d9;color:#c95a5a;opacity:.6}
+  .choice.ok{background:linear-gradient(135deg,#c6f0e0,#94ddc3);color:#0b5c46;box-shadow:0 6px 0 #79c4a8}
+  .choice.ng{background:#ffdede;color:#9c3535;box-shadow:0 6px 0 #f0b9b9}
   .qbar{display:flex;gap:5px;justify-content:center;flex:0 0 auto}
-  .qbar i{width:26px;height:9px;border-radius:5px;background:#e2d6dd}
+  .qbar i{width:28px;height:10px;border-radius:5px;background:#e2d6dd}
+  .qbar i.now{background:#ffce62}
   .qbar i.hit{background:var(--mint)}
   .qbar i.miss{background:#ffb3b3}
   /* ---- ことばづくり ---- */
+  /* スロットとタイルは1つのまとまり。離すと「押す→入る」のつながりが切れる */
+  .wplay{flex:0 0 auto;display:flex;flex-direction:column;gap:14px}
+  /* 絵・スロット・タイルをひとかたまりとして画面の中央に置く */
+  #s-build .quiz{justify-content:center}
+  #s-build .qem{font-size:min(40vw,26vh)}
   .wslots{display:flex;gap:10px;justify-content:center;flex:0 0 auto}
   /* 4文字以上のことばは、画面幅からはみ出さないように小さくする */
   .wslots.long{gap:6px}
   .wslots.long .wslot{width:clamp(48px,16vw,72px);font-size:clamp(26px,9vw,40px);border-radius:16px}
   .wslot{
-    width:clamp(64px,20vw,88px);aspect-ratio:1/1;border-radius:22px;background:#fff;
+    width:clamp(64px,20vw,88px);aspect-ratio:1/1;border-radius:22px;background:#fffdfe;
     display:grid;place-items:center;font-size:clamp(34px,11vw,48px);font-weight:800;
-    color:var(--pink-d);box-shadow:inset 0 0 0 3px #f0e2ea;
+    color:var(--pink-d);border:3px dashed #f0b9d0;
   }
-  .wslot.filled{box-shadow:0 5px 0 #ecdfe6}
-  .wtiles{flex:1;display:flex;gap:12px;justify-content:center;align-items:center;flex-wrap:wrap;align-content:center;min-height:0}
+  .wslot.filled{border-color:transparent;background:#fff;box-shadow:0 5px 0 #ecdfe6}
+  .wtiles{flex:0 0 auto;display:flex;gap:12px;justify-content:center;align-items:center;flex-wrap:wrap;align-content:center}
   .wtile{
     width:clamp(66px,21vw,92px);aspect-ratio:1/1;border:none;border-radius:24px;background:#fff;
     box-shadow:0 6px 0 #e6dbe2;font-size:clamp(34px,11vw,48px);font-weight:800;color:var(--pink-d);
@@ -182,35 +232,47 @@
   .rewardScreen{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0 2px 10px}
   .rcount{text-align:center;font-size:22px;font-weight:800;color:var(--pink-d);margin:6px 0 12px}
   .sheet{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+  /* これから手に入るシールも影として見せる。集める気持ちは「残りが見える」ことで生まれる */
   .slot{
-    aspect-ratio:1/1;border-radius:18px;background:#fff8;box-shadow:inset 0 0 0 2px #ffffff;
-    display:grid;place-items:center;font-size:clamp(20px,7vw,30px);opacity:.35;
+    aspect-ratio:1/1;border-radius:18px;background:#ffffffc4;box-shadow:inset 0 0 0 2px #f3e6ee;
+    display:grid;place-items:center;font-size:min(8vw,34px);
   }
-  .slot.got{background:#fff;opacity:1;box-shadow:0 4px 0 #ecdfe6}
+  .slot:not(.got){filter:grayscale(1);opacity:.28}
+  .slot.got{background:#fff;box-shadow:0 4px 0 #ecdfe6}
   .gojuon{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:18px}
   .gcell{
     aspect-ratio:1/1;border-radius:14px;background:#fff;display:grid;place-items:center;
-    font-size:clamp(18px,6vw,26px);font-weight:800;color:#cfc2ca;box-shadow:0 3px 0 #ecdfe6;position:relative;
+    font-size:clamp(18px,6vw,26px);font-weight:800;color:#947d89;box-shadow:0 3px 0 #ecdfe6;position:relative;
   }
   .gcell.read{color:var(--pink-d)}
-  .gcell.wrote::after{content:"⭐️";position:absolute;right:1px;bottom:-1px;font-size:11px}
+  .gcell.wrote{background:linear-gradient(135deg,#fff6d6,#ffe9a8);box-shadow:0 3px 0 #e6c56f}
+  .gcell.wrote::after{content:"⭐️";position:absolute;right:3px;bottom:2px;font-size:11px;line-height:1}
   .gcell.blank{background:transparent;box-shadow:none}
-  .gsub{grid-column:1/-1;text-align:center;font-size:14px;font-weight:700;opacity:.55;margin:14px 0 2px}
+  .gsub{grid-column:1/-1;text-align:center;font-size:14px;font-weight:700;color:var(--ink-2);margin:14px 0 4px}
+  .rsub{display:block;font-size:14px;font-weight:600;color:var(--ink-2);margin-top:3px}
   .rowbtn.extra{background:linear-gradient(135deg,#f6f0ff,#ece1ff)}
   .rowbtn.extra .chars{color:#7a52c8}
-  .legend{text-align:center;font-size:13px;opacity:.6;margin-top:10px}
-  .credit{text-align:center;font-size:11px;color:#a2949c;margin-top:18px;padding-bottom:6px}
+  .legend{text-align:center;font-size:13px;color:#6f606a;font-weight:600;margin-top:12px}
+  .credit{text-align:center;font-size:12px;line-height:1.6;color:#71646c;margin-top:18px;padding-bottom:6px}
   .credit a{color:inherit}
   #sndMsg{display:inline-block;font-size:12px;color:var(--ink);margin-top:6px}
   /* ---- お祝いオーバーレイ ---- */
   #cheer{
     position:fixed;inset:0;display:none;place-items:center;z-index:50;
-    background:rgba(255,255,255,.72);backdrop-filter:blur(2px);
+    background:rgba(255,248,251,.82);backdrop-filter:blur(3px);
   }
   #cheer.on{display:grid}
-  #cheer .box{text-align:center;animation:pop .45s cubic-bezier(.2,1.6,.4,1)}
-  #cheer .em{font-size:clamp(80px,30vw,140px)}
-  #cheer .msg{font-size:clamp(28px,9vw,40px);font-weight:800;color:var(--pink-d);margin-top:4px}
+  /* 白い台紙を敷かないと、下の画面と混ざって「ほめられた」感じが消える */
+  #cheer .box{
+    text-align:center;animation:pop .45s cubic-bezier(.2,1.6,.4,1);
+    background:#fff;border-radius:36px;padding:18px 24px 24px;margin:0 18px;
+    max-width:340px;box-shadow:0 10px 0 #f0dfe8;
+  }
+  #cheer .em{font-size:min(26vw,116px);line-height:1.1}
+  #cheer .msg{
+    font-size:min(7.4vw,32px);font-weight:800;color:var(--pink-d);margin-top:6px;
+    line-height:1.35;line-break:strict;word-break:auto-phrase;
+  }
   @keyframes pop{from{transform:scale(.3);opacity:0}to{transform:scale(1);opacity:1}}
   .conf{position:fixed;top:-30px;font-size:22px;z-index:49;pointer-events:none;animation:fall linear forwards}
   @keyframes fall{to{transform:translateY(110vh) rotate(540deg);opacity:.2}}
@@ -224,13 +286,72 @@
     .hero{margin:1vh 0}
     .big{height:70px;font-size:20px}
   }
+  /* よこむき。子どもは平気で端末を回すので、縦組みのまま押し出して
+     「できた！」が画面外に消える状態を残さない。左右に分けて全部届くようにする */
+  @media (orientation:landscape) and (max-height:560px){
+    #app{max-width:none;padding-left:16px;padding-right:16px}
+    header{min-height:44px}
+    .hbtn{width:44px;height:44px;border-radius:15px;font-size:22px}
+    .htitle{font-size:17px}
+    .stars{font-size:15px;padding:6px 10px}
+    .screen{padding-top:4px}
+
+    .hero{margin:0 0 6px;display:flex;align-items:baseline;justify-content:center;gap:12px}
+    .hero .name{font-size:20px;line-height:1.2}
+    .hero .name br{display:none}
+    .hero .sub{margin-top:0;font-size:13px}
+    .novoice{max-width:none;margin-top:6px}
+    .menu{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-content:center}
+    .big{height:clamp(54px,26vh,86px);font-size:19px;border-radius:20px;padding:0 14px;gap:10px}
+    .big small{font-size:12px}
+    .rows{grid-template-columns:repeat(4,1fr)}
+    .rowbtn{min-height:72px}
+
+    .dots,#tDots{display:none}
+    .stage{flex-direction:row;align-items:stretch;gap:12px}
+    .card{flex:1;justify-content:center;padding:10px 14px}
+    .card .ch{font-size:min(30vh,22vw)}
+    .card .emoji{font-size:min(17vh,12vw)}
+    .card .word{font-size:min(6.5vh,4.6vw)}
+    .navrow{width:auto;flex:0 0 92px;flex-direction:column}
+    .nav,.speak{flex:1;height:auto}
+    .nav{font-size:24px}
+    .speak{font-size:17px}
+
+    .traceWrap{
+      display:grid;grid-template-columns:minmax(0,1fr) 136px;grid-template-rows:auto minmax(0,1fr);
+      align-items:center;gap:6px 12px;
+    }
+    .hintrow{grid-column:1/-1}
+    .tracehint{font-size:14px;min-height:0}
+    .cvBox{grid-column:1;grid-row:2;width:min(74vh,50vw);height:min(74vh,50vw);justify-self:center}
+    .toolrow{grid-column:2;grid-row:2;width:auto;flex-direction:column;height:100%}
+    .tool{height:auto;flex:1;font-size:17px}
+
+    .quiz{
+      display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);
+      grid-template-rows:auto minmax(0,1fr);gap:8px 12px;
+    }
+    .qbar{grid-column:1/-1}
+    .qtop{grid-column:1;grid-row:2;align-self:center;padding:10px}
+    .qtop .qem{font-size:min(22vh,15vw)}
+    .qtop .qch{font-size:min(30vh,18vw)}
+    .qtop .qtxt{font-size:15px}
+    #qPlay{width:min(26vh,15vw)}
+    .choices{grid-column:2;grid-row:2}
+    .choice{font-size:min(20vh,14vw)}
+    .choice.em{font-size:min(22vh,15vw)}
+    .wplay{grid-column:2;grid-row:2;gap:10px;justify-content:center}
+    .wslot,.wtile{width:min(13vh,9vw);font-size:min(8vh,5.5vw);border-radius:16px}
+    .sheet{grid-template-columns:repeat(10,1fr)}
+  }
 </style>
 </head>
 <body>
 <div id="app">
   <header>
     <button class="hbtn" id="back" aria-label="もどる" style="visibility:hidden">◀︎</button>
-    <div class="htitle" id="title">ひらがな</div>
+    <div class="htitle" id="title"></div>
     <div class="stars" id="starBox">⭐️ 0</div>
   </header>
 
@@ -274,8 +395,9 @@
   <!-- なぞりがき -->
   <section class="screen" id="s-trace">
     <div class="traceWrap">
+      <div class="dots" id="tDots"></div>
       <div class="hintrow">
-        <div class="tracehint" id="tHint">うすい もじを ゆびで なぞろう！</div>
+        <div class="tracehint" id="tHint">ゆびで なぞろう！</div>
         <button class="mini" id="tOrder">☝️ かきかた</button>
       </div>
       <div class="cvBox">
@@ -305,11 +427,14 @@
     <div class="quiz">
       <div class="qbar" id="bBar"></div>
       <div class="qtop">
+        <button class="replay" id="bRep" aria-label="もういちど きく">🔊</button>
         <div class="qem" id="bEm">🐱</div>
         <div class="qtxt" id="bTxt">おとを きいて もじを ならべよう</div>
       </div>
-      <div class="wslots" id="bSlots"></div>
-      <div class="wtiles" id="bTiles"></div>
+      <div class="wplay">
+        <div class="wslots" id="bSlots"></div>
+        <div class="wtiles" id="bTiles"></div>
+      </div>
     </div>
   </section>
 
@@ -328,7 +453,7 @@
       <div class="rcount" id="rewardCount"></div>
       <div class="sheet" id="sheet"></div>
       <div class="gojuon" id="gojuon"></div>
-      <div class="legend">ピンクの もじ＝よんだ　⭐️＝かけた</div>
+      <div class="legend">ピンクの もじ＝よめた　／　きいろ＋⭐️＝かけた</div>
       <div class="credit">
         <button class="mini" id="sndTest">🔊 おとの テスト</button>
         <span id="sndMsg"></span>
@@ -408,7 +533,7 @@ const STICKERS = ['🌸','🐰','🍓','⭐️','🦄','🍩','🐬','🌈','�
 /* =========================================================
    進捗（localStorage）
    ========================================================= */
-const APP_VER='12';
+const APP_VER='13';
 const KEY='ao-hiragana-v2';
 // 保存領域が使えない環境（プライベートモード等）でも遊べるように失敗を無視する
 const store={
@@ -497,7 +622,8 @@ let stack=[];
 function show(name,title,push=true){
   Object.values(SCREENS).forEach(id=>$(id).classList.remove('on'));
   $(SCREENS[name]).classList.add('on');
-  $('title').textContent=title||'ひらがな';
+  // ホームには大きな見出しがあるので、ヘッダーの題は出さない（同じ言葉が二重に出るため）
+  $('title').textContent = name==='home' ? '' : (title||'ひらがな');
   if(push)stack.push(name);
   $('back').style.visibility = name==='home' ? 'hidden':'visible';
 }
@@ -534,7 +660,7 @@ document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>{
 let rowsMode='read';
 function openRows(mode){
   rowsMode=mode;
-  const list=$('rowList'); list.innerHTML='';
+  const list=$('rowList'); list.innerHTML=''; list.className='rows '+mode;
   // 清音46字が半分以上読めてから濁音を出す（最初から選択肢が多すぎないように）
   const readCount=ALL46.filter(c=>D.read[c]).length;
   let rows = readCount>=23 ? [...ROWS,...EXTRA] : ROWS;
@@ -546,9 +672,12 @@ function openRows(mode){
     const done=r.chars.filter(c=>mode==='read'?D.read[c]:D.wrote[c]).length;
     const b=document.createElement('button');
     b.className='rowbtn'+(done===r.chars.length?' done':'')+(r.special?' special':'')+(r.extra?' extra':'')+(r.word?' word':'');
+    // 進みぐあいは算用数字ではなく●で見せる（4歳は「0 / 5」を読めない）
+    const prog = r.special
+      ? '<span class="lbl">あおちゃん 💗</span>'
+      : r.chars.map((_,i)=>`<i class="${i<done?'on':''}"></i>`).join('');
     b.innerHTML=(r.em?`<div class="em">${r.em}</div>`:'')
-      +`<div class="chars">${r.chars.join('')}</div>
-      <div class="prog">${r.special?'あおちゃん💗':'⭐️'+done+' / '+r.chars.length}</div>`;
+      +`<div class="chars">${r.chars.join('')}</div><div class="prog">${prog}</div>`;
     b.dataset.say = r.word ? r.word : (r.special ? 'あおちゃん' : r.chars.join('、'));
     b.onclick=()=>{ tap(b); mode==='read'?openRead(r):openTrace(r); };
     list.appendChild(b);
@@ -716,10 +845,13 @@ function paintTrace(lead=0){
   const c=tSet[tIdx];
   stopOrder();
   // ことばの場合は「いま何文字目か」を出す
-  $('tHint').textContent = tWord
-    ? '「'+tWord+'」の '+(tIdx+1)+'もじめ　「'+c+'」を なぞろう！'
-    : '「'+c+'」を ゆびで なぞろう！';
+  // 何の字かは見本が、何文字目かは●が、ことばはヘッダーが見せている。
+  // ここで全部を言い直すと、狭い端末で2行に割れて見本が縮む
+  $('tHint').textContent = 'ゆびで なぞろう！';
   $('tOrder').hidden = !strokesOf(c);
+  // 行やことばの何文字目にいるか。よむ側と同じ見せ方に揃える
+  $('tDots').innerHTML = tSet.length>1
+    ? tSet.map((_,i)=>`<div class="dot${i===tIdx?' on':''}"></div>`).join('') : '';
   if(lead!==false){
     const line = tWord ? `${tWord}の、${c}` : `${c}を なぞってね`;
     const at = lead==='after' ? afterSayMs() : 250;
@@ -856,7 +988,7 @@ function startQuiz(mode){
 }
 function paintBar(){
   $('qBar').innerHTML = Array.from({length:qTotal},(_,i)=>
-    `<i class="${qLog[i]===1?'hit':qLog[i]===0?'miss':''}"></i>`).join('');
+    `<i class="${qLog[i]===1?'hit':qLog[i]===0?'miss':i===qN?'now':''}"></i>`).join('');
 }
 function nextQ(){
   if(qN>=qTotal) return endQuiz();
@@ -877,15 +1009,18 @@ function nextQ(){
   }else if(qMode==='picture'){
     const [w,em]=WORDS[qAns];
     const shown = TAIL[qAns] ? TAIL[qAns] : '__'+w.slice(1);
-    top.innerHTML=`<div class="qem">${em}</div><div class="qtxt">${shown}　→　どの もじ？</div>`;
+    top.innerHTML=`<button class="replay" aria-label="もういちど きく">🔊</button>`
+      +`<div class="qem">${em}</div><div class="qtxt">${shown}　→　どの もじ？</div>`;
     setTimeout(()=>say(w),lead);
     top.onclick=()=>say(w);
     ch.innerHTML=opts.map(c=>`<button class="choice" data-c="${c}">${c}</button>`).join('');
   }else{ // reverse：文字を見て、正しい絵をえらぶ
-    top.innerHTML=`<div class="qch">${qAns}</div><div class="qtxt">この もじの ことばは どれ？</div>`;
+    top.innerHTML=`<button class="replay" aria-label="もういちど きく">🔊</button>`
+      +`<div class="qch">${qAns}</div><div class="qtxt">この もじの ことばは どれ？</div>`;
     setTimeout(()=>say(qAns,.55),lead);
     top.onclick=()=>say(qAns,.55);
-    ch.innerHTML=opts.map(c=>`<button class="choice" data-c="${c}" style="font-size:clamp(38px,13vw,58px)">${WORDS[c][1]}</button>`).join('');
+    // 絵が答えなので、絵はカードいっぱいの大きさで出す
+    ch.innerHTML=opts.map(c=>`<button class="choice em" data-c="${c}">${WORDS[c][1]}</button>`).join('');
   }
   ch.querySelectorAll('.choice').forEach(b=>b.onclick=()=>answer(b));
 }
@@ -931,7 +1066,7 @@ $('goBuild').onclick=()=>{ tap($('goBuild')); bN=0; bLog=[]; show('build','こ�
 function nextBuild(){
   if(bN>=bTotal) return endBuild();
   $('bBar').innerHTML=Array.from({length:bTotal},(_,i)=>
-    `<i class="${bLog[i]===1?'hit':bLog[i]===0?'miss':''}"></i>`).join('');
+    `<i class="${bLog[i]===1?'hit':bLog[i]===0?'miss':i===bN?'now':''}"></i>`).join('');
   // 読んだ文字だけでできることばを優先し、足りなければ全体から出す
   const known=BUILDABLE.filter(w=>[...w].every(c=>D.read[c]));
   // まだ読んだ文字が少ないうちは、濁音を含まない清音のことばに限る
@@ -941,6 +1076,7 @@ function nextBuild(){
   $('bEm').textContent=WORD_EM[bWord]||'🧩';
   $('bTxt').textContent='「'+bWord+'」を つくろう';
   $('bEm').onclick=()=>say(bWord);
+  $('bRep').onclick=()=>say(bWord);
   setTimeout(()=>{ if(stillOn('s-build')) say(bWord); }, bN===0?afterSayMs():300);   // 1問目はボタン名を読み終えてから
   $('bSlots').className='wslots'+(bWord.length>=4?' long':'');
   $('bSlots').innerHTML=[...bWord].map(()=>`<div class="wslot"></div>`).join('');
@@ -983,9 +1119,10 @@ function endBuild(){
    ========================================================= */
 function openReward(){
   const got=Math.min(STICKERS.length, Math.floor(D.stars/5));
-  $('rewardCount').innerHTML=`あつめた ⭐️ ${D.stars}こ<br><span style="font-size:14px;opacity:.65;font-weight:600">⭐️5こで シールが1まい もらえるよ</span>`;
-  $('sheet').innerHTML=STICKERS.map((s,i)=>`<div class="slot${i<got?' got':''}">${i<got?s:'･'}</div>`).join('');
-  const g=$('gojuon'); g.innerHTML='';
+  $('rewardCount').innerHTML=`あつめた ⭐️ ${D.stars}こ<span class="rsub">⭐️5こで シールが1まい もらえるよ</span>`;
+  // まだ手に入っていないシールも影で見せる。あと何枚かが見えることが集める動機になる
+  $('sheet').innerHTML=STICKERS.map((s,i)=>`<div class="slot${i<got?' got':''}">${s}</div>`).join('');
+  const g=$('gojuon'); g.innerHTML='<div class="gsub">あいうえお ひょう</div>';
   const table=(rows)=>rows.forEach(r=>{
     const cells=r.chars.slice();
     while(cells.length<5)cells.push(null);
@@ -1041,7 +1178,11 @@ document.addEventListener('touchend',()=>{ if(jaVoice===null&&'speechSynthesis' 
 (()=>{
   let t=null;
   const start=()=>{ t=setTimeout(()=>{
-    if(confirm('きろく（⭐️とシール）を ぜんぶ けしますか？')){
+    // 2秒押しは4歳でも起こせるし、はい／いいえは読めないまま押せてしまう。
+    // 足し算を1問はさんで、消せるのが大人だけになるようにする
+    const a=3+Math.floor(Math.random()*7), b=3+Math.floor(Math.random()*7);
+    const ans=prompt(`きろく（⭐️とシール）を ぜんぶ けしますか？\nけす場合は ${a} + ${b} の こたえを 入力してください。`);
+    if(ans!==null && Number(String(ans).trim())===a+b){
       store.del();
       D.read={}; D.wrote={}; D.stars=0; paintStars(); goHome();
     }
