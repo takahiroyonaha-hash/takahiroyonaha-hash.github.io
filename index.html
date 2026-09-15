@@ -18,6 +18,8 @@
     --sky:#8fc9ff; --purple:#c9a7ff; --ink:#4a3b45; --paper:#fffaf3;
     /* 薄いグレーの二次テキストは明るい地の上で 2〜3:1 しか出ない。読める濃さを決めておく */
     --ink-2:#6f626a;
+    /* 動きはこの1本だけを使う。外から素早く入って、静かに止まる */
+    --ease:cubic-bezier(.16,1,.3,1);
     --pad-b:env(safe-area-inset-bottom,0px);
   }
   /* 4歳が見る画面なので、端末のダークモードでも明るい配色のまま固定する */
@@ -32,7 +34,8 @@
     touch-action:manipulation;
   }
   #app{
-    position:fixed;inset:0;display:flex;flex-direction:column;
+    /* カードの送りアニメーションが一瞬だけ画面幅からはみ出すので、外へ出さない */
+    position:fixed;inset:0;overflow:hidden;display:flex;flex-direction:column;
     padding:calc(env(safe-area-inset-top,0px) + 6px) 12px calc(var(--pad-b) + 8px);
     max-width:520px;margin:0 auto;
   }
@@ -276,10 +279,20 @@
   @keyframes pop{from{transform:scale(.3);opacity:0}to{transform:scale(1);opacity:1}}
   .conf{position:fixed;top:-30px;font-size:22px;z-index:49;pointer-events:none;animation:fall linear forwards}
   @keyframes fall{to{transform:translateY(110vh) rotate(540deg);opacity:.2}}
+  /* 4歳には「押した → なにかが動いた」のつながりが要る。
+     画面の入り・カードの送り・⭐️が増えた瞬間の3か所だけに絞る */
+  @keyframes screenIn{from{opacity:0;transform:translateY(12px)}}
+  .screen.on{animation:screenIn .34s var(--ease)}
+  @keyframes cardInR{from{opacity:.35;transform:translateX(30px)}}
+  @keyframes cardInL{from{opacity:.35;transform:translateX(-30px)}}
+  .card.inR{animation:cardInR .3s var(--ease)}
+  .card.inL{animation:cardInL .3s var(--ease)}
+  @keyframes starBump{35%{transform:scale(1.28)}}
+  .stars.bump{animation:starBump .5s var(--ease)}
   button:focus-visible,.gcell:focus-visible{outline:4px solid #5aabf5;outline-offset:3px}
   @media (prefers-reduced-motion:reduce){
     .conf{display:none}
-    #cheer .box{animation:none}
+    #cheer .box,.screen.on,.card.inR,.card.inL,.stars.bump,.wtile.bad{animation:none}
     *{transition:none!important}
   }
   @media (max-height:620px){
@@ -533,7 +546,7 @@ const STICKERS = ['🌸','🐰','🍓','⭐️','🦄','🍩','🐬','🌈','�
 /* =========================================================
    進捗（localStorage）
    ========================================================= */
-const APP_VER='13';
+const APP_VER='14';
 const KEY='ao-hiragana-v2';
 // 保存領域が使えない環境（プライベートモード等）でも遊べるように失敗を無視する
 const store={
@@ -543,7 +556,11 @@ const store={
 };
 const D = Object.assign({read:{},wrote:{},stars:0}, store.get());
 const save = ()=>store.set(D);
-function addStar(n=1){ D.stars+=n; save(); paintStars(); }
+function addStar(n=1){
+  D.stars+=n; save(); paintStars();
+  // もらった瞬間が分かるように、⭐️をひと跳ねさせる
+  starBox.classList.remove('bump'); void starBox.offsetWidth; starBox.classList.add('bump');
+}
 const paintStars = ()=> starBox.textContent='⭐️ '+D.stars;
 const $ = id=>document.getElementById(id);
 
@@ -691,12 +708,22 @@ function openRows(mode){
 let rSet=[], rIdx=0, rSpecial=false;
 // 画面を離れたあとに、あとから来る処理が割り込まないようにする
 const stillOn = id => $(id).classList.contains('on');
+// 「お祝い → つぎへ」の流れは、始まったら終わるまで受け付けない。
+// 4歳はボタンを連打する。ガードが無いと⭐️が3倍に入り、画面も2枚3枚と飛ぶ
+let locked=false;
+function lockFor(ms, then){
+  if(locked) return false;
+  locked=true;
+  setTimeout(()=>{ locked=false; then&&then(); }, ms);
+  return true;
+}
 function openRead(row){
   rSet=row.chars.slice(); rIdx=0; rSpecial=!!row.special;
   // 行の名前を読み終わってから1枚目を読む（声が重ならないように）
   show('read','よむ'); paintRead('after');
 }
-function paintRead(lead=0){
+let readTimer=0;
+function paintRead(lead=0, dir=0){
   const c=rSet[rIdx];
   // 名前の行だけは「あり・おにぎり」ではなく、自分の名前で見せる
   const [w,em] = rSpecial ? ['あおちゃん','💗'] : WORDS[c];
@@ -709,7 +736,18 @@ function paintRead(lead=0){
   $('rNext').disabled = false;
   $('rNext').textContent = last ? '🎉' : '▶︎';
   $('readDots').innerHTML = rSet.map((_,i)=>`<div class="dot${i===rIdx?' on':''}"></div>`).join('');
-  if(!D.read[c]){ D.read[c]=true; save(); addStar(1); }
+  // 「開いた瞬間」に⭐️を渡すと、▶を連打するだけで46字ぶんが数秒で貯まってしまう。
+  // カードがしばらく開かれていたら「よんだ」とみなす（ふつうに遊ぶぶんには気づかない）
+  clearTimeout(readTimer);
+  if(!D.read[c]) readTimer=setTimeout(()=>{
+    if(!stillOn('s-read')||rSet[rIdx]!==c) return;
+    D.read[c]=true; save(); addStar(1);
+  },1200);
+  if(dir){
+    const el=$('readCard');
+    el.classList.remove('inR','inL'); void el.offsetWidth;
+    el.classList.add(dir>0?'inR':'inL');
+  }
   const line=`${c}。${w}`;
   if(lead==='after') afterSay(()=>{ if(stillOn('s-read')&&rSet[rIdx]===c) say(line); });
   else say(line);
@@ -718,15 +756,13 @@ const rWordNow = ()=> rSpecial ? 'あおちゃん' : WORDS[rSet[rIdx]][0];
 $('rSay').onclick=()=>say(`${rSet[rIdx]}。${rWordNow()}`);
 $('rCh').onclick=()=>say(rSet[rIdx],.6);
 $('rEm').onclick=()=>say(rWordNow());
-$('rPrev').onclick=()=>{ if(rIdx>0){rIdx--;sndTap();paintRead();} };
-$('rNext').onclick=()=>{ if(rIdx<rSet.length-1){rIdx++;sndTap();paintRead();} else finishSet(); };
-// 連打しても1回だけ。お祝いの間に「もどる」を押されたら、行えらびに引き戻さない
-let finishing=false;
+$('rPrev').onclick=()=>{ if(locked) return; if(rIdx>0){rIdx--;sndTap();paintRead(0,-1);} };
+$('rNext').onclick=()=>{ if(locked) return; if(rIdx<rSet.length-1){rIdx++;sndTap();paintRead(0,1);} else finishSet(); };
 function finishSet(){
-  if(finishing) return;
-  finishing=true; $('rNext').disabled=true;
+  // お祝いが終わるまで次を受け付けない（連打しても⭐️は1回ぶん）
+  if(!lockFor(1600, ()=>{ if(stillOn('s-read')) openRows('read'); })) return;
+  $('rNext').disabled=true;
   cheer('🎉','ぜんぶ よめた！'); addStar(2); say('ぜんぶ よめたね');
-  setTimeout(()=>{ finishing=false; if(stillOn('s-read')) openRows('read'); },1600);
 }
 
 /* =========================================================
@@ -844,7 +880,6 @@ $('tOrder').onclick=()=>{ sndTap(); playOrder(true); };
 function paintTrace(lead=0){
   const c=tSet[tIdx];
   stopOrder();
-  // ことばの場合は「いま何文字目か」を出す
   // 何の字かは見本が、何文字目かは●が、ことばはヘッダーが見せている。
   // ここで全部を言い直すと、狭い端末で2行に割れて見本が縮む
   $('tHint').textContent = 'ゆびで なぞろう！';
@@ -942,17 +977,17 @@ window.addEventListener('resize',()=>{
   sizeCanvas(); paintTrace(false);      // 描き直しでは読み上げない
 });
 
-$('tClear').onclick=()=>{ sndTap(); clearDraw(); $('tHint').textContent='もういちど どうぞ！'; };
+$('tClear').onclick=()=>{ if(locked) return; sndTap(); clearDraw(); $('tHint').textContent='もういちど どうぞ！'; };
 $('tCheck').onclick=()=>{
-  if(!maskTotal) return;
+  if(!maskTotal || locked) return;
   let hit=0; for(let i=0;i<covered.length;i++) if(covered[i])hit++;
   const ratio = hit/maskTotal;              // 見本をどれだけ塗れたか
   const c=tSet[tIdx];
   if(ratio>=0.55 && strokes>0){
+    if(!lockFor(1500, ()=>{ if(stillOn('s-trace')) nextTrace(); })) return;
     if(!D.wrote[c]){ D.wrote[c]=true; save(); }
     addStar(2); sndOK(); say(`${c}、じょうずだね`);
     cheer(ratio>0.8?'💯':'🌟', ratio>0.8?'かんぺき！':'よくできた！');
-    setTimeout(()=>{ if(stillOn('s-trace')) nextTrace(); },1500);
   }else if(ratio>=0.3){
     sndNG(); $('tHint').textContent='あと ちょっと！ぜんぶ なぞってみて 💪';
     say('あとちょっと');
@@ -961,14 +996,13 @@ $('tCheck').onclick=()=>{
     say('うすいもじの うえを なぞってね');
   }
 };
-$('tNext').onclick=()=>{ sndTap(); nextTrace(); };
+$('tNext').onclick=()=>{ if(locked) return; sndTap(); nextTrace(); };
 function nextTrace(){
-  if(tIdx<tSet.length-1){ tIdx++; paintTrace(); }
-  else{
-    if(tWord){ cheer('🏆','「'+tWord+'」が かけた！'); setTimeout(()=>{ if(stillOn('s-trace')) say(tWord+'が かけたね'); },300); }
-    else cheer('🏆','ぜんぶ かけた！');
-    addStar(3); setTimeout(()=>{ if(stillOn('s-trace')) openRows('trace'); },1900);
-  }
+  if(tIdx<tSet.length-1){ tIdx++; paintTrace(); return; }
+  if(!lockFor(1900, ()=>{ if(stillOn('s-trace')) openRows('trace'); })) return;
+  if(tWord){ cheer('🏆','「'+tWord+'」が かけた！'); setTimeout(()=>{ if(stillOn('s-trace')) say(tWord+'が かけたね'); },300); }
+  else cheer('🏆','ぜんぶ かけた！');
+  addStar(3);
 }
 
 /* =========================================================
@@ -1080,8 +1114,9 @@ function nextBuild(){
   setTimeout(()=>{ if(stillOn('s-build')) say(bWord); }, bN===0?afterSayMs():300);   // 1問目はボタン名を読み終えてから
   $('bSlots').className='wslots'+(bWord.length>=4?' long':'');
   $('bSlots').innerHTML=[...bWord].map(()=>`<div class="wslot"></div>`).join('');
-  // 正解の文字＋おとり1枚をまぜる
-  const decoy=pick(ALL.filter(c=>!bWord.includes(c)));
+  // 正解の文字＋おとり1枚をまぜる。おとりも、その子が知っている字から出す
+  const dpool=learned().filter(c=>!bWord.includes(c));
+  const decoy=pick(dpool.length?dpool:ALL.filter(c=>!bWord.includes(c)));
   $('bTiles').innerHTML=shuffle([...bWord,decoy])
     .map(c=>`<button class="wtile" data-c="${c}">${c}</button>`).join('');
   $('bTiles').querySelectorAll('.wtile').forEach(t=>t.onclick=()=>tapTile(t));
