@@ -27,7 +27,7 @@ def img(pid, left, top, w, h, pos="50% 50%"):
 def ph1():  # 写真パネル左＋白地
     fs = fit(NAME, 1380, .12, 150)
     return f'''<div style="position:absolute;inset:0;background:#F6F2EE"></div>
-{img(WALL, 0, 0, 820, H, "50% 12%")}
+<div style="position:absolute;left:0;top:0;width:820px;height:{H}px;overflow:hidden">{img(WALL, -200, -40, 1220, 1830)}</div>
 <div style="position:absolute;left:820px;top:0;width:10px;height:{H}px;background:#B8337A"></div>
 <div style="position:absolute;left:930px;top:0;bottom:0;width:1400px;display:flex;flex-direction:column;justify-content:center">
   <div style="font:700 {fs}px 'Zen Old Mincho',serif;letter-spacing:.12em;color:#3A2C33;line-height:1.15;white-space:nowrap">{NAME}</div>
@@ -39,11 +39,11 @@ def ph1():  # 写真パネル左＋白地
 
 
 def ph2():  # 全面写真（夕空）＋文字
-    fs = fit(NAME, 1500, .12, 150)
+    fs = fit(NAME, 1420, .12, 150)
     return f'''<div style="position:absolute;inset:0;background:#1F2A33"></div>
 {img(DUSK, 0, 0, W, H, "50% 30%")}
-<div style="position:absolute;inset:0;background:linear-gradient(90deg,rgba(20,26,32,.15) 0%,rgba(20,26,32,.55) 38%,rgba(20,26,32,.82) 60%)"></div>
-<div style="position:absolute;left:820px;top:0;bottom:0;width:1500px;display:flex;flex-direction:column;justify-content:center">
+<div style="position:absolute;left:740px;top:0;width:{W-740}px;height:{H}px;background:#161D24;opacity:.82"></div>
+<div style="position:absolute;left:860px;top:0;bottom:0;width:1460px;display:flex;flex-direction:column;justify-content:center">
   <div style="font:700 {fs}px 'Zen Old Mincho',serif;letter-spacing:.12em;color:#F6EEE6;line-height:1.15;white-space:nowrap">{NAME}</div>
   <div style="margin-top:40px;display:flex;align-items:center;gap:28px">
     {mark("#F6EEE6", 84)}
@@ -67,7 +67,7 @@ def ph3():  # 文字左＋写真右（窓のように切り取る）
 
 def pv1():  # 袖看板：写真上＋縦書き
     return f'''<div style="position:absolute;inset:0;background:#F6F2EE"></div>
-{img(WALL, 0, 0, H, 820, "50% 8%")}
+<div style="position:absolute;left:0;top:0;width:{H}px;height:820px;overflow:hidden">{img(WALL, -120, -20, 840, 1258)}</div>
 <div style="position:absolute;left:0;top:820px;width:{H}px;height:10px;background:#B8337A"></div>
 <div style="position:absolute;left:0;right:0;top:900px;height:1260px;display:flex;justify-content:center">
   {vtext(NAME, int(1180/len(NAME)/1.08), "700 {fs}px 'Zen Old Mincho',serif", "#3A2C33")}
