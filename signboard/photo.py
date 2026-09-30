@@ -27,7 +27,8 @@ def img(pid, left, top, w, h, pos="50% 50%"):
 def ph1():  # 写真パネル左＋白地
     fs = fit(NAME, 1380, .12, 150)
     return f'''<div style="position:absolute;inset:0;background:#F6F2EE"></div>
-<div style="position:absolute;left:0;top:0;width:820px;height:{H}px;overflow:hidden">{img(WALL, -200, -40, 1220, 1830)}</div>
+{img(WALL, -200, -40, 1220, 1830)}
+<div style="position:absolute;left:820px;top:0;width:{W-820}px;height:{H}px;background:#F6F2EE"></div>
 <div style="position:absolute;left:820px;top:0;width:10px;height:{H}px;background:#B8337A"></div>
 <div style="position:absolute;left:930px;top:0;bottom:0;width:1400px;display:flex;flex-direction:column;justify-content:center">
   <div style="font:700 {fs}px 'Zen Old Mincho',serif;letter-spacing:.12em;color:#3A2C33;line-height:1.15;white-space:nowrap">{NAME}</div>
@@ -67,7 +68,8 @@ def ph3():  # 文字左＋写真右（窓のように切り取る）
 
 def pv1():  # 袖看板：写真上＋縦書き
     return f'''<div style="position:absolute;inset:0;background:#F6F2EE"></div>
-<div style="position:absolute;left:0;top:0;width:{H}px;height:820px;overflow:hidden">{img(WALL, -120, -20, 840, 1258)}</div>
+{img(WALL, -260, -20, 1120, 1678)}
+<div style="position:absolute;left:0;top:820px;width:{H}px;height:{W-820}px;background:#F6F2EE"></div>
 <div style="position:absolute;left:0;top:820px;width:{H}px;height:10px;background:#B8337A"></div>
 <div style="position:absolute;left:0;right:0;top:900px;height:1260px;display:flex;justify-content:center">
   {vtext(NAME, int(1180/len(NAME)/1.08), "700 {fs}px 'Zen Old Mincho',serif", "#3A2C33")}
