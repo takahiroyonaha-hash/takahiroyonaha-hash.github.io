@@ -4,6 +4,7 @@ signs.html  … Canva取り込み用（1ページ=1看板、data-document-role="
 png/*.png   … 各案のプレビュー画像
 """
 import asyncio
+import re
 import pathlib
 
 HERE = pathlib.Path(__file__).parent
@@ -21,14 +22,14 @@ FONTS = ("https://fonts.googleapis.com/css2?"
 W, H = 2400, 600  # 横長ファサード看板 3600×900mm 想定（1px = 1.5mm）
 
 
-def mark(color, flame=None, size=300):
-    """灯明（ともしび）＋ホーム（駅の乗降台）のシンボル。"""
-    flame = flame or color
-    return f'''<svg width="{size}" height="{size}" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-<circle cx="100" cy="100" r="88" fill="none" stroke="{color}" stroke-width="7"/>
-<path d="M100 40 C124 72 130 102 100 130 C70 102 76 72 100 40 Z" fill="{flame}"/>
-<path d="M54 152 L146 152" stroke="{color}" stroke-width="7" stroke-linecap="round"/>
-</svg>'''
+BRAND = "#953D91"  # TAKUSHO GROUP ロゴの紫
+_MARK = re.search(r"<g transform.*</g>", (HERE / "takusho_mark.svg").read_text()).group(0)
+
+
+def mark(color=BRAND, size=300):
+    """TAKUSHO GROUP ロゴ先頭の蓮マーク（ロゴ画像からトレース）。size×size の枠に中央配置。"""
+    return (f'<svg width="{size}" height="{size}" viewBox="0 0 1656 1184" preserveAspectRatio="xMidYMid meet" '
+            f'xmlns="http://www.w3.org/2000/svg"><g fill="{color}">{_MARK}</g></svg>')
 
 
 def fit(name, avail, ls, cap):
@@ -82,7 +83,7 @@ def p1(name):  # 白壁と墨
     fs = fit(name, 1640, .14, 160)
     return f'''<div style="position:absolute;inset:0;background:#EFEBE3"></div>
 <div style="position:absolute;left:0;right:0;bottom:0;height:18px;background:#2B2926"></div>
-<div style="position:absolute;left:150px;top:141px">{mark("#2B2926", "#A8452F")}</div>
+<div style="position:absolute;left:150px;top:141px">{mark(BRAND)}</div>
 <div style="position:absolute;left:560px;top:0;bottom:18px;width:1700px;display:flex;flex-direction:column;justify-content:center">
   <div style="font:700 {fs}px 'Zen Old Mincho',serif;letter-spacing:.14em;color:#2B2926;line-height:1.1;white-space:nowrap">{name}</div>
   <div style="margin-top:44px;display:flex;align-items:center;gap:32px">
@@ -97,7 +98,7 @@ def p2(name):  # 琉球絣（藍）
     return f'''<div style="position:absolute;inset:0;background:#1F3550"></div>
 <div style="position:absolute;left:0;top:0">{kasuri("#E9E2D2", "#1F3550")}</div>
 <div style="position:absolute;left:0;bottom:0">{kasuri("#E9E2D2", "#1F3550")}</div>
-<div style="position:absolute;left:150px;top:170px">{mark("#F2ECDF", "#E3B36A", 260)}</div>
+<div style="position:absolute;left:150px;top:170px">{mark("#F2ECDF", 260)}</div>
 <div style="position:absolute;left:520px;top:64px;bottom:64px;width:1760px;display:flex;flex-direction:column;justify-content:center">
   <div style="font:800 {fs}px 'Shippori Mincho B1',serif;letter-spacing:.12em;color:#F2ECDF;line-height:1.15;white-space:nowrap">{name}</div>
   <div style="margin-top:40px;font:500 44px 'Zen Kaku Gothic New',sans-serif;letter-spacing:.22em;color:#C9D2DC">{SUB}</div>
@@ -113,7 +114,7 @@ def p3(name):  # 花ブロック（琉球石灰岩＋赤瓦）
   <div style="font:500 44px 'Zen Kaku Gothic New',sans-serif;letter-spacing:.2em;color:#B4553A">{SUB}</div>
   <div style="margin-top:30px;font:700 {fs}px 'Zen Maru Gothic',sans-serif;letter-spacing:.06em;color:#3A332C;line-height:1.15;white-space:nowrap">{name}</div>
 </div>
-<div style="position:absolute;right:90px;bottom:60px">{mark("#3A332C", "#B4553A", 110)}</div>'''
+<div style="position:absolute;right:80px;bottom:30px">{mark(BRAND, 170)}</div>'''
 
 
 def p4(name):  # 木と灯り
@@ -123,6 +124,7 @@ def p4(name):  # 木と灯り
     return f'''<div style="position:absolute;inset:0;background:{wood}"></div>
 <div style="position:absolute;inset:36px;border:3px solid rgba(243,230,207,.55)"></div>
 <div style="position:absolute;left:0;right:0;top:0;bottom:0;text-align:center;display:flex;flex-direction:column;justify-content:center">
+  <div style="display:flex;justify-content:center;margin-bottom:10px">{mark("#F3E6CF", 120)}</div>
   <div style="display:flex;justify-content:center;align-items:center;gap:40px">
     <span style="display:block;width:80px;height:2px;background:#E9C58A"></span>
     <span style="font:500 42px 'Zen Kaku Gothic New',sans-serif;letter-spacing:.3em;color:#E9C58A">{SUB}</span>
@@ -136,7 +138,7 @@ def p5(name):  # 夜の行灯（内照式）
     fs = fit(name, 1560, .12, 146)
     return f'''<div style="position:absolute;inset:0;background:#1D1C1A"></div>
 <div style="position:absolute;left:120px;top:60px;bottom:60px;width:360px;border-radius:180px;background:radial-gradient(circle at 50% 50%,#F7E3B8 0,#E9B872 45%,#3A2E20 100%)"></div>
-<div style="position:absolute;left:150px;top:150px">{mark("#2A2016", "#2A2016", 300)}</div>
+<div style="position:absolute;left:150px;top:150px">{mark("#6E2C6B", 300)}</div>
 <div style="position:absolute;left:580px;top:0;bottom:0;width:1720px;display:flex;flex-direction:column;justify-content:center">
   <div style="font:700 {fs}px 'Zen Old Mincho',serif;letter-spacing:.12em;color:#F6E9CF;line-height:1.15;white-space:nowrap;text-shadow:0 0 24px rgba(233,184,114,.45)">{name}</div>
   <div style="margin-top:36px;height:2px;width:100%;background:#9C8358"></div>
@@ -148,7 +150,7 @@ def v2(name):  # 袖看板（縦）琉球絣
     return f'''<div style="position:absolute;inset:0;background:#1F3550"></div>
 <div style="position:absolute;left:0;top:0;transform-origin:0 0;transform:rotate(90deg) translate(0,-600px)">{kasuri("#E9E2D2", "#1F3550", 56)}</div>
 <div style="position:absolute;left:0;top:0;transform-origin:0 0;transform:rotate(90deg) translate(0,-56px)">{kasuri("#E9E2D2", "#1F3550", 56)}</div>
-<div style="position:absolute;left:170px;top:90px">{mark("#F2ECDF", "#E3B36A", 260)}</div>
+<div style="position:absolute;left:170px;top:90px">{mark("#F2ECDF", 260)}</div>
 <div style="position:absolute;left:0;right:0;top:430px;height:1880px;display:flex;justify-content:center">
   {vtext(name, min(150, int(1800/len(name)/1.08)), "800 {fs}px 'Shippori Mincho B1',serif", "#F2ECDF")}
 </div>'''
@@ -161,7 +163,7 @@ def v3(name):  # 袖看板（縦）花ブロック
 <div style="position:absolute;left:0;right:0;top:470px;height:1780px;display:flex;justify-content:center">
   {vtext(name, min(150, int(1640/len(name)/1.08)), "700 {fs}px 'Zen Maru Gothic',sans-serif", "#3A332C")}
 </div>
-<div style="position:absolute;left:245px;bottom:60px">{mark("#3A332C", "#B4553A", 110)}</div>'''
+<div style="position:absolute;left:215px;bottom:40px">{mark(BRAND, 170)}</div>'''
 
 
 def chia(h=420, seed=0, petal="#7B6A9B", stem="#6F7D5A"):
@@ -192,7 +194,7 @@ def p6(name):  # 町花チア
 <div style="position:absolute;left:640px;top:0;bottom:0;width:1680px;display:flex;flex-direction:column;justify-content:center">
   <div style="font:700 {fs}px 'Zen Old Mincho',serif;letter-spacing:.12em;color:#3B3346;line-height:1.15;white-space:nowrap">{name}</div>
   <div style="margin-top:40px;display:flex;align-items:center;gap:28px">
-    {mark("#3B3346", "#7B6A9B", 64)}
+    {mark(BRAND, 84)}
     <span style="font:500 44px 'Zen Kaku Gothic New',sans-serif;letter-spacing:.2em;color:#5E566A">{SUB}</span>
   </div>
 </div>'''
