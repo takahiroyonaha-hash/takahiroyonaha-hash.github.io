@@ -200,6 +200,86 @@ def p6(name):  # 町花チア
 </div>'''
 
 
+def bougainvillea(w, h, branches, seed=1):
+    """塀からこぼれるブーゲンビリア。3枚の苞（ほう）＋白い小花の房を枝に沿って配置する。"""
+    import math
+    import random
+    rnd = random.Random(seed)
+    bract_cols = ["#B8337A", "#C9488C", "#A22A6B", "#D05E98"]
+    out = []
+
+    def bez(p, t):
+        (x0, y0), (x1, y1), (x2, y2), (x3, y3) = p
+        u = 1 - t
+        return (u**3*x0 + 3*u*u*t*x1 + 3*u*t*t*x2 + t**3*x3,
+                u**3*y0 + 3*u*u*t*y1 + 3*u*t*t*y2 + t**3*y3)
+
+    def leaf(x, y, L, a):
+        return (f'<path transform="translate({x:.0f} {y:.0f}) rotate({a:.0f})" fill="#5E7A4A" '
+                f'd="M0 0 C{L*.3:.0f} {-L*.22:.0f} {L*.7:.0f} {-L*.22:.0f} {L:.0f} 0 '
+                f'C{L*.7:.0f} {L*.22:.0f} {L*.3:.0f} {L*.22:.0f} 0 0 Z"/>')
+
+    def cluster(x, y, L):
+        g = []
+        for k in range(3):
+            a = k * 120 + rnd.uniform(-12, 12) + rnd.uniform(0, 120)
+            c = rnd.choice(bract_cols)
+            g.append(f'<path transform="translate({x:.0f} {y:.0f}) rotate({a:.0f})" fill="{c}" '
+                     f'd="M0 0 C{-L*.6:.0f} {-L*.25:.0f} {-L*.5:.0f} {-L:.0f} 0 {-L:.0f} '
+                     f'C{L*.5:.0f} {-L:.0f} {L*.6:.0f} {-L*.25:.0f} 0 0 Z"/>')
+        g.append(f'<circle cx="{x:.0f}" cy="{y:.0f}" r="{L*.12:.1f}" fill="#F3EAD0"/>')
+        return "".join(g)
+
+    for p, n, size in branches:
+        d = "M{} {} C{} {} {} {} {} {}".format(*[f"{v:.0f}" for pt in p for v in pt])
+        out.append(f'<path d="{d}" fill="none" stroke="#6B5842" stroke-width="5" stroke-linecap="round"/>')
+        for i in range(n):
+            t = (i + .5) / n
+            x, y = bez(p, t)
+            # 葉は枝の左右に
+            out.append(leaf(x, y, size * 1.1, rnd.uniform(0, 360)))
+        for i in range(n):
+            t = (i + rnd.uniform(.1, .9)) / n
+            x, y = bez(p, t)
+            for _ in range(rnd.randint(2, 3)):
+                cx, cy = x + rnd.uniform(-size, size), y + rnd.uniform(-size * .7, size * .9)
+                out.append(cluster(cx, cy, size * rnd.uniform(.7, 1.0)))
+    return f'<svg width="{w}" height="{h}" viewBox="0 0 {w} {h}" xmlns="http://www.w3.org/2000/svg">{"".join(out)}</svg>'
+
+
+def p7(name):  # ブーゲンビリア
+    fs = fit(name, 1480, .12, 150)
+    flowers = bougainvillea(760, H, [
+        (((-20, 40), (220, 10), (420, 120), (560, 60)), 7, 46),
+        (((-20, 60), (120, 200), (160, 380), (120, 560)), 7, 44),
+        (((60, 120), (260, 180), (330, 330), (300, 470)), 5, 38),
+    ])
+    return f'''<div style="position:absolute;inset:0;background:#F6F2EE"></div>
+<div style="position:absolute;left:0;top:0;width:{W}px;height:10px;background:#B8337A"></div>
+<div style="position:absolute;left:0;top:0">{flowers}</div>
+<div style="position:absolute;left:780px;top:0;bottom:0;width:1560px;display:flex;flex-direction:column;justify-content:center">
+  <div style="font:700 {fs}px 'Zen Old Mincho',serif;letter-spacing:.12em;color:#3A2C33;line-height:1.15;white-space:nowrap">{name}</div>
+  <div style="margin-top:40px;display:flex;align-items:center;gap:28px">
+    {mark(BRAND, 84)}
+    <span style="font:500 44px 'Zen Kaku Gothic New',sans-serif;letter-spacing:.2em;color:#6A5560">{SUB}</span>
+  </div>
+</div>'''
+
+
+def v7(name):  # 袖看板（縦）ブーゲンビリア
+    flowers = bougainvillea(H, 560, [
+        (((-20, 30), (200, 0), (420, 90), (620, 40)), 7, 42),
+        (((-20, 50), (100, 180), (140, 330), (90, 520)), 5, 40),
+        (((620, 60), (500, 180), (470, 330), (520, 480)), 5, 40),
+    ], seed=3)
+    return f'''<div style="position:absolute;inset:0;background:#F6F2EE"></div>
+<div style="position:absolute;left:0;top:0">{flowers}</div>
+<div style="position:absolute;left:0;right:0;top:600px;height:1580px;display:flex;justify-content:center">
+  {vtext(name, min(140, int(1500/len(name)/1.08)), "700 {fs}px 'Zen Old Mincho',serif", "#3A2C33")}
+</div>
+<div style="position:absolute;left:215px;bottom:40px">{mark(BRAND, 170)}</div>'''
+
+
 PATTERNS = [
     ("p1", "A 白壁と墨", p1, W, H),
     ("p2", "B 琉球絣", p2, W, H),
@@ -207,8 +287,10 @@ PATTERNS = [
     ("p4", "D 木と灯り", p4, W, H),
     ("p5", "E 夜の行灯", p5, W, H),
     ("p6", "F 町花チア", p6, W, H),
+    ("p7", "G ブーゲンビリア", p7, W, H),
     ("v2", "B' 袖看板・琉球絣", v2, H, W),
     ("v3", "C' 袖看板・花ブロック", v3, H, W),
+    ("v7", "G' 袖看板・ブーゲンビリア", v7, H, W),
 ]
 
 
