@@ -164,12 +164,47 @@ def v3(name):  # 袖看板（縦）花ブロック
 <div style="position:absolute;left:245px;bottom:60px">{mark("#3A332C", "#B4553A", 110)}</div>'''
 
 
+def chia(h=420, seed=0, petal="#7B6A9B", stem="#6F7D5A"):
+    """南風原町の町花・チアの花穂。茎の上半分に小さな唇形の花を段々に付ける。"""
+    parts = [f'<path d="M40 {h} C38 {h*.7:.0f} 42 {h*.4:.0f} 40 20" stroke="{stem}" stroke-width="4" fill="none"/>',
+             f'<ellipse cx="22" cy="{h*.78:.0f}" rx="18" ry="7" fill="{stem}" transform="rotate(-30 22 {h*.78:.0f})"/>',
+             f'<ellipse cx="58" cy="{h*.7:.0f}" rx="18" ry="7" fill="{stem}" transform="rotate(30 58 {h*.7:.0f})"/>']
+    y, i = 30, 0
+    while y < h * 0.55:
+        side = -1 if (i + seed) % 2 else 1
+        size = 7 + i * 0.9
+        parts.append(f'<ellipse cx="{40 + side * size:.0f}" cy="{y:.0f}" rx="{size:.0f}" ry="{size*.55:.0f}" fill="{petal}" '
+                     f'transform="rotate({side*-25} {40 + side*size:.0f} {y:.0f})"/>')
+        parts.append(f'<circle cx="40" cy="{y+6:.0f}" r="{size*.45:.0f}" fill="{petal}" opacity=".7"/>')
+        y += 16 + i * 1.5
+        i += 1
+    return f'<svg width="80" height="{h}" viewBox="0 0 80 {h}" xmlns="http://www.w3.org/2000/svg">{"".join(parts)}</svg>'
+
+
+def p6(name):  # 町花チア
+    fs = fit(name, 1500, .12, 150)
+    stalks = "".join(
+        f'<div style="position:absolute;left:{x}px;bottom:0">{chia(hh, k)}</div>'
+        for k, (x, hh) in enumerate([(70, 430), (150, 520), (235, 380), (310, 470), (390, 340)]))
+    return f'''<div style="position:absolute;inset:0;background:#F4F1EC"></div>
+<div style="position:absolute;left:0;top:0;width:520px;height:{H}px;background:#E7E2EC"></div>
+{stalks}
+<div style="position:absolute;left:640px;top:0;bottom:0;width:1680px;display:flex;flex-direction:column;justify-content:center">
+  <div style="font:700 {fs}px 'Zen Old Mincho',serif;letter-spacing:.12em;color:#3B3346;line-height:1.15;white-space:nowrap">{name}</div>
+  <div style="margin-top:40px;display:flex;align-items:center;gap:28px">
+    {mark("#3B3346", "#7B6A9B", 64)}
+    <span style="font:500 44px 'Zen Kaku Gothic New',sans-serif;letter-spacing:.2em;color:#5E566A">{SUB}</span>
+  </div>
+</div>'''
+
+
 PATTERNS = [
     ("p1", "A 白壁と墨", p1, W, H),
     ("p2", "B 琉球絣", p2, W, H),
     ("p3", "C 花ブロック", p3, W, H),
     ("p4", "D 木と灯り", p4, W, H),
     ("p5", "E 夜の行灯", p5, W, H),
+    ("p6", "F 町花チア", p6, W, H),
     ("v2", "B' 袖看板・琉球絣", v2, H, W),
     ("v3", "C' 袖看板・花ブロック", v3, H, W),
 ]
