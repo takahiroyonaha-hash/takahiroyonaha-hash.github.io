@@ -244,9 +244,34 @@ def v4():  # ブーゲンビリア
     return doc("袖看板 V4 ブーゲンビリア", H, W, [("background", bg), ("flowers", fl), ("logo", mk), ("text", tx)])
 
 
+def v5():  # 路線図（縦）+ ブーゲンビリア
+    bg = rect(0, 0, H, W, "#FFFFFF")
+    mk = lotus(70, 90, 240)
+    fl = bougain(300, 760, [
+        (((280, -20), (230, 160), (270, 340), (210, 560)), 9, 42),
+        (((300, 40), (180, 70), (130, 200), (140, 380)), 6, 38),
+    ], 5)
+    fl = f'<g transform="translate({H - 300} 0)">{fl}</g>'
+    ys = [700 + i * 375 for i in range(5)]
+    labels = ["法事", "法要", "納骨", "ご供養", "ご相談"]
+    route = f'<path d="M110 {ys[0]}V{ys[-1]}" stroke="{BRAND}" stroke-width="8" stroke-linecap="round" fill="none"/>'
+    nodes = ""
+    for i, y in enumerate(ys):
+        if i == len(ys) - 1:
+            nodes += (f'<circle cx="110" cy="{y}" r="30" fill="#FFFFFF" stroke="{BRAND}" stroke-width="7"/>'
+                      f'<circle cx="110" cy="{y}" r="14" fill="{BRAND}"/>')
+        else:
+            nodes += f'<circle cx="110" cy="{y}" r="19" fill="#FFFFFF" stroke="{BRAND}" stroke-width="8"/>'
+    lab = "".join(text_path(t, GOTHIC_B, 46, 160, y + 16, INK, .1, pid=f"station-{i+1}")
+                  for i, (t, y) in enumerate(zip(labels, ys)))
+    name = vtext_path(NAME, MINCHO, 112, 445, 800, INK, pid="shop-name")
+    return doc("袖看板 V5 路線図とブーゲンビリア", H, W, [("background", bg), ("flowers", fl), ("logo", mk),
+                                                       ("route", route + nodes), ("text", name + lab)])
+
+
 DESIGNS = [
     ("h1_lotus", h1, W, H), ("h2_route", h2, W, H), ("h3_kasuri", h3, W, H), ("h4_bougainvillea", h4, W, H), ("h5_route_bougainvillea", h5, W, H),
-    ("v1_lotus", v1, H, W), ("v4_bougainvillea", v4, H, W),
+    ("v1_lotus", v1, H, W), ("v4_bougainvillea", v4, H, W), ("v5_route_bougainvillea", v5, H, W),
 ]
 
 
