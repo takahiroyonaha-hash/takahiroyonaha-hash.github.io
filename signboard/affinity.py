@@ -197,6 +197,32 @@ def h4():  # ブーゲンビリア（再構築）
     return doc("看板 H4 ブーゲンビリア", W, H, [("background", bg), ("flowers", fl), ("logo", mk), ("text", tx)])
 
 
+def h5():  # 路線図 + ブーゲンビリア（右上から垂らす）
+    bg = rect(0, 0, W, H, "#FFFFFF")
+    mk = lotus(140, (H - lotus_h(330)) / 2, 330)
+    nx = 560
+    name = text_path(NAME, MINCHO, fit_size(NAME, MINCHO, 2060 - nx, .1, 128), nx, 232, INK, .1, pid="shop-name")
+    xs = [610 + i * 360 for i in range(5)]
+    labels = ["法事", "法要", "納骨", "ご供養", "ご相談"]
+    route = f'<path d="M{xs[0]} 372H{xs[-1]}" stroke="{BRAND}" stroke-width="8" stroke-linecap="round" fill="none"/>'
+    nodes = ""
+    for i, x in enumerate(xs):
+        if i == len(xs) - 1:
+            nodes += (f'<circle cx="{x}" cy="372" r="30" fill="#FFFFFF" stroke="{BRAND}" stroke-width="7"/>'
+                      f'<circle cx="{x}" cy="372" r="14" fill="{BRAND}"/>')
+        else:
+            nodes += f'<circle cx="{x}" cy="372" r="19" fill="#FFFFFF" stroke="{BRAND}" stroke-width="8"/>'
+    lab = "".join(text_path(t, GOTHIC_B, 44, x, 470, INK, .1, "middle", pid=f"station-{i+1}")
+                  for i, (t, x) in enumerate(zip(labels, xs)))
+    fl = bougain(440, H, [
+        (((400, -20), (330, 150), (390, 330), (320, 540)), 8, 44),
+        (((440, 40), (280, 70), (200, 200), (215, 400)), 6, 40),
+    ], 5)
+    fl = f'<g transform="translate({W - 440} 0)">{fl}</g>'
+    return doc("看板 H5 路線図とブーゲンビリア", W, H, [("background", bg), ("flowers", fl), ("logo", mk),
+                                                    ("route", route + nodes), ("text", name + lab)])
+
+
 # ---- 袖看板（縦） ---------------------------------------------------------
 
 def v1():  # 蓮マーク
@@ -219,7 +245,7 @@ def v4():  # ブーゲンビリア
 
 
 DESIGNS = [
-    ("h1_lotus", h1, W, H), ("h2_route", h2, W, H), ("h3_kasuri", h3, W, H), ("h4_bougainvillea", h4, W, H),
+    ("h1_lotus", h1, W, H), ("h2_route", h2, W, H), ("h3_kasuri", h3, W, H), ("h4_bougainvillea", h4, W, H), ("h5_route_bougainvillea", h5, W, H),
     ("v1_lotus", v1, H, W), ("v4_bougainvillea", v4, H, W),
 ]
 
