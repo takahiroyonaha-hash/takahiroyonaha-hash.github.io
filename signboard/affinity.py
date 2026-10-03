@@ -197,7 +197,7 @@ def h4():  # ブーゲンビリア（再構築）
     return doc("看板 H4 ブーゲンビリア", W, H, [("background", bg), ("flowers", fl), ("logo", mk), ("text", tx)])
 
 
-def h5():  # 路線図 + ブーゲンビリア（右上から垂らす）
+def h5(hours=False):  # 路線図 + ブーゲンビリア（右上から垂らす）。hours=Trueで営業時間の位置を追加
     bg = rect(0, 0, W, H, "#FFFFFF")
     mk = lotus(140, (H - lotus_h(330)) / 2, 330)
     nx = 560
@@ -219,8 +219,16 @@ def h5():  # 路線図 + ブーゲンビリア（右上から垂らす）
         (((440, 40), (280, 70), (200, 200), (215, 400)), 6, 40),
     ], 5)
     fl = f'<g transform="translate({W - 440} 0)">{fl}</g>'
-    return doc("看板 H5 路線図とブーゲンビリア", W, H, [("background", bg), ("flowers", fl), ("logo", mk),
-                                                    ("route", route + nodes), ("text", name + lab)])
+    layers = [("background", bg), ("flowers", fl), ("logo", mk), ("route", route + nodes), ("text", name + lab)]
+    if hours:
+        # 営業時間（仮の文言）。路線図の駅名の下、店名と左端をそろえる。細い罫で駅名と区切る。
+        rule = f'<path d="M{xs[0]-50} 516H{xs[-1]+66}" stroke="#D9CFDB" stroke-width="2" fill="none"/>'
+        t = (text_path("営業時間", GOTHIC_B, 38, xs[0] - 50, 568, BRAND, .12, pid="hours-label")
+             + text_path("9:00〜18:00", GOTHIC, 38, xs[0] + 140, 568, INK, .08, pid="hours-time-SAMPLE")
+             + text_path("定休日", GOTHIC_B, 38, xs[0] + 560, 568, BRAND, .12, pid="closed-label")
+             + text_path("水曜日", GOTHIC, 38, xs[0] + 710, 568, INK, .08, pid="closed-day-SAMPLE"))
+        layers.append(("hours-SAMPLE", rule + t))
+    return doc("看板 H5 路線図とブーゲンビリア" + ("（営業時間）" if hours else ""), W, H, layers)
 
 
 # ---- 袖看板（縦） ---------------------------------------------------------
@@ -270,7 +278,7 @@ def v5():  # 路線図（縦）+ ブーゲンビリア
 
 
 DESIGNS = [
-    ("h1_lotus", h1, W, H), ("h2_route", h2, W, H), ("h3_kasuri", h3, W, H), ("h4_bougainvillea", h4, W, H), ("h5_route_bougainvillea", h5, W, H),
+    ("h1_lotus", h1, W, H), ("h2_route", h2, W, H), ("h3_kasuri", h3, W, H), ("h4_bougainvillea", h4, W, H), ("h5_route_bougainvillea", h5, W, H), ("h5_route_bougainvillea_hours", lambda: h5(True), W, H),
     ("v1_lotus", v1, H, W), ("v4_bougainvillea", v4, H, W), ("v5_route_bougainvillea", v5, H, W),
 ]
 
